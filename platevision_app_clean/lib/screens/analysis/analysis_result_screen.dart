@@ -124,13 +124,19 @@ class DetectionOverlayPainter extends CustomPainter {
           ..pushStyle(textStyle)
           ..addText(label);
         final paragraph = paragraphBuilder.build()
-          ..layout(const ui.ParagraphConstraints(width: 10000));
+          // FIX: constraint sesuai lebar canvas, bukan nilai besar 10000
+          ..layout(ui.ParagraphConstraints(width: size.width));
 
         const labelHeight = 14.0;
-        final labelWidth = paragraph.width + 8;
+        // FIX: longestLine = lebar teks aktual yg dirender
+        // paragraph.width dulu = 10000 (nilai constraint) → sebabkan garis panjang
+        final labelWidth = paragraph.longestLine + 8;
+
+        // FIX: clamp posisi X agar label tidak keluar batas kanan canvas
+        final labelX = displayRect.left.clamp(0.0, max(0.0, size.width - labelWidth));
 
         final labelBg = Rect.fromLTWH(
-          displayRect.left,
+          labelX,
           displayRect.top - labelHeight,
           labelWidth,
           labelHeight,

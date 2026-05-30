@@ -1,0 +1,63 @@
+# Python virtual environment
+.venv/
+*.pyc
+__pycache__/
+
+# Dataset directories (large files)
+data/raw/
+data/processed/
+data/agar/
+data/yolo_*
+data/old/
+data/analyses/
+
+# MLflow artifacts
+mlflow_artifacts/
+mlflow*.db
+mlflow*.log
+
+# Model weights (root + models/)
+*.pt
+models/
+
+# YOLO training runs
+runs/
+
+# Jupyter checkpoints
+notebooks/.ipynb_checkpoints/
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Gradio certificates
+.gradio/
+
+# Lock files
+.~lock*
+
+# Backups & archives
+*backup*/
+*backup-*/
+platevision-flutter-source.tar.gz
+gradio_app_v*_backup*.py
+gradio_app_v2.py
+gradio_v2_app_backup.py
+
+# Sample images
+samples/
+
+# Flutter & web frontend
+platevision_app_clean/
+platevision_app/
+platevision-web/
+platevision-web-backup*/
+
+# Config
+config.yaml

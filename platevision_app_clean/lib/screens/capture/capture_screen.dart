@@ -184,6 +184,13 @@ class _CaptureScreenState extends State<CaptureScreen> {
   bool _metadataGroup3Expanded = false;
   bool _metadataGroup4Expanded = false;
 
+  // ── Zoom state ──
+  final TransformationController _zoomController = TransformationController();
+  double _currentZoom = 1.0;
+  static const double _minZoom = 1.0;
+  static const double _maxZoom = 5.0;
+  static const double _zoomStep = 0.5;
+
   @override
   void initState() {
     super.initState();
@@ -219,6 +226,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     _mediaLotController.dispose();
     _morphologyNotesController.dispose();
     _analystNameController.dispose();
+    _zoomController.dispose();
     super.dispose();
   }
 
@@ -242,6 +250,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
           _selectedSample = null;
           _sampleBytes = null;
           _imageQualityLabel = _assessQuality(bytes.length);
+          _resetZoom();
         });
       }
     } catch (e) {
@@ -271,6 +280,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
           _selectedSample = null;
           _sampleBytes = null;
           _imageQualityLabel = _assessQuality(bytes.length);
+          _resetZoom();
         });
       }
     } catch (e) {
@@ -298,6 +308,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
         _pickedImageBytes = null;
         _pickedImageName = null;
         _imageQualityLabel = _assessQuality(data.length);
+        _resetZoom();
       });
     } catch (e) {
       _showError('Failed to load sample: $e');
@@ -357,7 +368,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   }
 
   void _clearImage() {
-    setState(() { _pickedImageBytes = null; _pickedImageName = null; _imageQualityLabel = '--'; _selectedSample = null; _sampleBytes = null; });
+    setState(() { _pickedImageBytes = null; _pickedImageName = null; _imageQualityLabel = '--'; _selectedSample = null; _sampleBytes = null; _resetZoom(); });
   }
 
   // ============================================================
@@ -478,15 +489,51 @@ class _CaptureScreenState extends State<CaptureScreen> {
   }
 
   // ============================================================
-  // IMAGE PREVIEW — Clean, no detection overlay
+  // IMAGE PREVIEW — With zoom support (scroll + buttons)
   // ============================================================
 
+  void _resetZoom() {
+    _zoomController.value = Matrix4.identity();
+    setState(() => _currentZoom = 1.0);
+  }
+
+  void _zoomIn() {
+    final newZoom = (_currentZoom + _zoomStep).clamp(_minZoom, _maxZoom);
+    if (newZoom != _currentZoom) {
+      _zoomController.value = Matrix4.identity()..scale(newZoom);
+      setState(() => _currentZoom = newZoom);
+    }
+  }
+
+  void _zoomOut() {
+    final newZoom = (_currentZoom - _zoomStep).clamp(_minZoom, _maxZoom);
+    if (newZoom != _currentZoom) {
+      _zoomController.value = Matrix4.identity()..scale(newZoom);
+      setState(() => _currentZoom = newZoom);
+    }
+  }
+
+  void _onZoomChanged(Matrix4 matrix) {
+    final scale = matrix.getMaxScaleOnAxis();
+    final clamped = scale.clamp(_minZoom, _maxZoom);
+    if (clamped != _currentZoom) {
+      setState(() => _currentZoom = clamped);
+    }
+  }
+
   Widget _buildImagePreview(bool hasImage) {
+    final isZoomed = _currentZoom > 1.0;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.bgCard,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        border: Border.all(color: AppColors.borderSubtle, width: 1),
+        border: Border.all(
+          color: isZoomed ? AppColors.accentPrimary.withOpacity(0.5) : AppColors.borderSubtle,
+          width: isZoomed ? 2 : 1,
+        ),
+        boxShadow: isZoomed
+          ? [BoxShadow(color: AppColors.accentPrimary.withOpacity(0.08), blurRadius: 8)]
+          : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -499,12 +546,35 @@ class _CaptureScreenState extends State<CaptureScreen> {
               border: Border(bottom: BorderSide(color: AppColors.borderSubtle, width: 1)),
             ),
             child: Row(children: [
-              Icon(Icons.image_outlined, size: 14, color: AppColors.textTertiary),
+              Icon(isZoomed ? Icons.zoom_in_rounded : Icons.image_outlined, size: 14,
+                color: isZoomed ? AppColors.accentPrimary : AppColors.textTertiary),
               const SizedBox(width: 6),
-              Text('IMAGE PREVIEW', style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 1)),
+              Text(isZoomed ? 'ZOOM ${_currentZoom.toStringAsFixed(1)}x' : 'IMAGE PREVIEW',
+                style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w600,
+                  color: isZoomed ? AppColors.accentPrimary : AppColors.textTertiary, letterSpacing: 1)),
               const Spacer(),
-              if (hasImage)
+              // ── Zoom controls ──
+              if (hasImage) ...[
+                _buildZoomButton(Icons.remove_rounded, _zoomOut, _currentZoom <= _minZoom),
+                const SizedBox(width: 3),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgInput,
+                    borderRadius: BorderRadius.circular(3),
+                    border: Border.all(color: AppColors.borderSubtle),
+                  ),
+                  child: Text('${_currentZoom.toStringAsFixed(1)}x',
+                    style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                ),
+                const SizedBox(width: 3),
+                _buildZoomButton(Icons.add_rounded, _zoomIn, _currentZoom >= _maxZoom),
+                const SizedBox(width: 6),
+                if (isZoomed)
+                  _buildZoomButton(Icons.refresh_rounded, _resetZoom, false),
+                if (isZoomed) const SizedBox(width: 6),
                 GestureDetector(onTap: _clearImage, child: Icon(Icons.close_rounded, size: 14, color: AppColors.textTertiary)),
+              ],
             ]),
           ),
           Expanded(
@@ -512,17 +582,39 @@ class _CaptureScreenState extends State<CaptureScreen> {
               ? ClipRRect(
                   borderRadius: BorderRadius.only(bottomLeft: Radius.circular(AppSpacing.radiusMd), bottomRight: Radius.circular(AppSpacing.radiusMd)),
                   child: Stack(fit: StackFit.expand, children: [
-                    // Base image only — clean preview, no overlay
-                    if (_pickedImageBytes != null)
-                      Image.memory(_pickedImageBytes!, fit: BoxFit.contain)
-                    else if (_sampleBytes != null)
-                      Image.memory(_sampleBytes!, fit: BoxFit.contain),
+                    // Zoomable image with InteractiveViewer
+                    InteractiveViewer(
+                      transformationController: _zoomController,
+                      minScale: _minZoom,
+                      maxScale: _maxZoom,
+                      onInteractionUpdate: (details) => _onZoomChanged(_zoomController.value),
+                      child: SizedBox.expand(
+                        child: _pickedImageBytes != null
+                          ? Image.memory(_pickedImageBytes!, fit: BoxFit.contain)
+                          : Image.memory(_sampleBytes!, fit: BoxFit.contain),
+                      ),
+                    ),
                     // Sample label badge
                     if (_selectedSample != null)
                       Positioned(top: 6, left: 6, child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(color: _selectedSample!.color.withOpacity(0.9), borderRadius: BorderRadius.circular(3)),
                         child: Text(_selectedSample!.label.toUpperCase(), style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 1)),
+                      )),
+                    // Zoom hint (bottom-left)
+                    if (!isZoomed)
+                      Positioned(bottom: 6, left: 6, child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xCC1A1F2E),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.borderSubtle.withOpacity(0.5)),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.pinch_rounded, size: 12, color: AppColors.textTertiary),
+                          const SizedBox(width: 4),
+                          Text('Scroll to zoom', style: GoogleFonts.inter(fontSize: 9, color: AppColors.textTertiary)),
+                        ]),
                       )),
                   ]),
                 )
@@ -533,6 +625,25 @@ class _CaptureScreenState extends State<CaptureScreen> {
                 ])),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildZoomButton(IconData icon, VoidCallback onTap, bool disabled) {
+    return GestureDetector(
+      onTap: disabled ? null : onTap,
+      child: Container(
+        width: 24, height: 24,
+        decoration: BoxDecoration(
+          color: disabled ? AppColors.bgInput : AppColors.accentPrimary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: disabled ? AppColors.borderSubtle : AppColors.accentPrimary.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Icon(icon, size: 14,
+          color: disabled ? AppColors.textMuted : AppColors.accentPrimary),
       ),
     );
   }

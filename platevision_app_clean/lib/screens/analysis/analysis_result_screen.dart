@@ -174,8 +174,28 @@ class AnalysisResultScreen extends StatefulWidget {
 }
 
 class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
-  bool _showOriginal = false; // Toggle between marked/original view
+  bool _showOriginal = false;
   String _classFilter = 'all';
+
+  // ── Zoom / pan controller ──────────────────────────────────────────────
+  final TransformationController _zoomController = TransformationController();
+  static const double _minScale = 1.0;
+  static const double _maxScale = 8.0;
+
+  void _resetZoom() => _zoomController.value = Matrix4.identity();
+
+  void _zoomBy(double factor) {
+    final cur = _zoomController.value.getMaxScaleOnAxis();
+    final next = (cur * factor).clamp(_minScale, _maxScale);
+    if (next == cur) return;
+    _zoomController.value = Matrix4.identity()..scale(next);
+  }
+
+  @override
+  void dispose() {
+    _zoomController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -384,36 +404,51 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
               ],
             ]),
           ),
-          // Image area — ACTUAL image with detection overlay
+          // Image area — ACTUAL image with detection overlay + zoom/pan
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.only(bottomLeft: Radius.circular(AppSpacing.radiusMd), bottomRight: Radius.circular(AppSpacing.radiusMd)),
               child: hasImage
-                ? LayoutBuilder(builder: (context, constraints) {
-                    return Stack(fit: StackFit.expand, children: [
-                      // ═══ GAMBAR ASLI ═══
-                      Image.memory(imageBytes!, fit: BoxFit.contain),
+                ? Stack(children: [
+                    // ─── InteractiveViewer: zoom scroll mouse + pinch touch ───────
+                    Positioned.fill(
+                      child: InteractiveViewer(
+                        transformationController: _zoomController,
+                        minScale: _minScale,
+                        maxScale: _maxScale,
+                        boundaryMargin: const EdgeInsets.all(double.infinity),
+                        child: Stack(fit: StackFit.expand, children: [
+                          // ═══ GAMBAR ASLI ═══
+                          Image.memory(imageBytes!, fit: BoxFit.contain),
 
-                      // ═══ DETECTION OVERLAY — Bounding boxes & + markers ═══
-                      if (!_showOriginal && result.imageWidth > 0 && result.imageHeight > 0)
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: DetectionOverlayPainter(
-                              detections: detections,
-                              imageWidth: result.imageWidth,
-                              imageHeight: result.imageHeight,
-                              showBoundingBoxes: false,
-                              showCrosshairs: true,
-                              showLabels: false,
+                          // ═══ DETECTION OVERLAY — crosshair + markers ═══
+                          if (!_showOriginal && result.imageWidth > 0 && result.imageHeight > 0)
+                            Positioned.fill(
+                              child: CustomPaint(
+                                painter: DetectionOverlayPainter(
+                                  detections: detections,
+                                  imageWidth: result.imageWidth,
+                                  imageHeight: result.imageHeight,
+                                  showBoundingBoxes: false,
+                                  showCrosshairs: true,
+                                  showLabels: false,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
+                        ]),
+                      ),
+                    ),
 
-                      // ═══ Legend badge (bottom-left) ═══
-                      if (!_showOriginal && detections.isNotEmpty)
-                        Positioned(bottom: 8, left: 8, child: _buildLegendBadge(detections)),
-                    ]);
-                  })
+                    // ─── Zoom controls (top-right) ────────────────────────────────
+                    Positioned(
+                      top: 8, right: 8,
+                      child: _buildZoomControls(),
+                    ),
+
+                    // ═══ Legend badge (bottom-left) ═══
+                    if (!_showOriginal && detections.isNotEmpty)
+                      Positioned(bottom: 8, left: 8, child: _buildLegendBadge(detections)),
+                  ])
                 : Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.broken_image_outlined, size: 40, color: AppColors.textMuted),
                     const SizedBox(height: 8),
@@ -426,6 +461,81 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Tombol zoom in / zoom out / reset di sudut gambar
+  Widget _buildZoomControls() {
+    return AnimatedBuilder(
+      animation: _zoomController,
+      builder: (context, _) {
+        final scale = _zoomController.value.getMaxScaleOnAxis();
+        final atMin = scale <= _minScale;
+        final atMax = scale >= _maxScale;
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.65),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.white.withOpacity(0.12)),
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            // Zoom in
+            _zoomBtn(
+              icon: Icons.add_rounded,
+              tooltip: 'Zoom in',
+              enabled: !atMax,
+              onTap: () => _zoomBy(1.0 + 0.3),
+            ),
+            Container(height: 1, color: Colors.white.withOpacity(0.1)),
+            // Persentase zoom — tap untuk reset
+            Tooltip(
+              message: 'Reset zoom',
+              child: GestureDetector(
+                onTap: _resetZoom,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  child: Text(
+                    '${(scale * 100).toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 9,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Container(height: 1, color: Colors.white.withOpacity(0.1)),
+            // Zoom out
+            _zoomBtn(
+              icon: Icons.remove_rounded,
+              tooltip: 'Zoom out',
+              enabled: !atMin,
+              onTap: () => _zoomBy(1.0 / 1.3),
+            ),
+          ]),
+        );
+      },
+    );
+  }
+
+  Widget _zoomBtn({
+    required IconData icon,
+    required String tooltip,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: enabled ? onTap : null,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(icon, size: 16,
+            color: enabled ? Colors.white : Colors.white24),
+        ),
       ),
     );
   }

@@ -435,6 +435,16 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
                                 ),
                               ),
                             ),
+
+                          // ═══ HOVER TOOLTIP — confidence % saat mouse hover ═══
+                          if (!_showOriginal && result.imageWidth > 0 && result.imageHeight > 0)
+                            Positioned.fill(
+                              child: _DetectionTooltipLayer(
+                                detections: detections,
+                                imageWidth: result.imageWidth,
+                                imageHeight: result.imageHeight,
+                              ),
+                            ),
                         ]),
                       ),
                     ),
@@ -886,5 +896,166 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
 
   String _formatTimestamp(DateTime dt) {
     return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// DETECTION TOOLTIP LAYER
+// Widget yang menempatkan hover area transparan di setiap deteksi.
+// Ikut zoom/pan karena berada di dalam InteractiveViewer.
+// ════════════════════════════════════════════════════════════════
+
+class _DetectionTooltipLayer extends StatefulWidget {
+  final List<DetectionResult> detections;
+  final int imageWidth;
+  final int imageHeight;
+
+  const _DetectionTooltipLayer({
+    required this.detections,
+    required this.imageWidth,
+    required this.imageHeight,
+  });
+
+  @override
+  State<_DetectionTooltipLayer> createState() => _DetectionTooltipLayerState();
+}
+
+class _DetectionTooltipLayerState extends State<_DetectionTooltipLayer> {
+  // Index deteksi yang sedang di-hover (-1 = tidak ada)
+  int _hoveredIndex = -1;
+
+  /// Hitung transform BoxFit.contain: scale + offset
+  _ImageTransform _calcTransform(BoxConstraints constraints) {
+    final cw = constraints.maxWidth;
+    final ch = constraints.maxHeight;
+    final iw = widget.imageWidth.toDouble();
+    final ih = widget.imageHeight.toDouble();
+    if (iw <= 0 || ih <= 0 || cw <= 0 || ch <= 0) {
+      return _ImageTransform(scale: 1, offsetX: 0, offsetY: 0);
+    }
+    final containerAspect = cw / ch;
+    final imageAspect = iw / ih;
+    double scale, offsetX, offsetY;
+    if (containerAspect > imageAspect) {
+      scale = ch / ih;
+      offsetX = (cw - iw * scale) / 2;
+      offsetY = 0;
+    } else {
+      scale = cw / iw;
+      offsetX = 0;
+      offsetY = (ch - ih * scale) / 2;
+    }
+    return _ImageTransform(scale: scale, offsetX: offsetX, offsetY: offsetY);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final t = _calcTransform(constraints);
+
+      return Stack(children: [
+        // Hit area transparan per deteksi
+        for (int i = 0; i < widget.detections.length; i++)
+          _buildHoverArea(i, t, constraints),
+      ]);
+    });
+  }
+
+  Widget _buildHoverArea(int i, _ImageTransform t, BoxConstraints constraints) {
+    final det = widget.detections[i];
+    final box = det.boundingBox;
+
+    // Koordinat tengah marker + di screen
+    final cx = box.center.dx * t.scale + t.offsetX;
+    final cy = box.center.dy * t.scale + t.offsetY;
+
+    // Hit area: minimal 28px, maksimal lebar bbox ter-scale
+    final bboxW = box.width * t.scale;
+    final bboxH = box.height * t.scale;
+    final hitW = bboxW.clamp(28.0, 64.0);
+    final hitH = bboxH.clamp(28.0, 64.0);
+
+    final isHovered = _hoveredIndex == i;
+    final color = AppColors.getDetectionColor(det.className);
+    final confidence = (det.confidence * 100).toStringAsFixed(0);
+    final label = '${det.className.toUpperCase()}  $confidence%';
+
+    return Positioned(
+      left: cx - hitW / 2,
+      top: cy - hitH / 2,
+      width: hitW,
+      height: hitH,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hoveredIndex = i),
+        onExit: (_) => setState(() => _hoveredIndex = -1),
+        child: Stack(clipBehavior: Clip.none, children: [
+          // Area transparan untuk deteksi hover
+          Container(color: Colors.transparent),
+
+          // Tooltip bubble — muncul saat hover
+          if (isHovered)
+            Positioned(
+              // Tampil di atas marker, geser agar tidak terpotong kanan
+              bottom: hitH / 2 + 6,
+              left: _tooltipLeft(cx, hitW, label, constraints.maxWidth),
+              child: _TooltipBubble(label: label, color: color),
+            ),
+        ]),
+      ),
+    );
+  }
+
+  /// Hitung posisi X tooltip agar tidak keluar batas kanan canvas
+  double _tooltipLeft(double cx, double hitW, String label, double canvasW) {
+    // Estimasi lebar tooltip: ~7px per karakter + 16px padding
+    final estWidth = label.length * 7.0 + 16;
+    final rawLeft = -estWidth / 2 + hitW / 2;
+    // Clamp agar tidak keluar canvas
+    final absLeft = cx - hitW / 2 + rawLeft;
+    if (absLeft + estWidth > canvasW) {
+      return canvasW - (cx - hitW / 2) - estWidth - 4;
+    }
+    if (absLeft < 0) return -cx + hitW / 2 + 4;
+    return rawLeft;
+  }
+}
+
+// Nilai transform BoxFit.contain
+class _ImageTransform {
+  final double scale, offsetX, offsetY;
+  const _ImageTransform({required this.scale, required this.offsetX, required this.offsetY});
+}
+
+// Bubble tooltip dengan styling lab
+class _TooltipBubble extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _TooltipBubble({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.92),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.white.withOpacity(0.25), width: 0.5),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontFamily: 'monospace',
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+          height: 1.2,
+        ),
+      ),
+    );
   }
 }

@@ -55,30 +55,30 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSpacing.md),
-  child: Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-  // Report history (paling atas)
-  _buildReportHistory(analysisProvider),
-  const SizedBox(height: AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Report history (paling atas)
+                      _buildReportHistory(analysisProvider),
+                      const SizedBox(height: AppSpacing.lg),
 
-  // Report type selector
-  _buildReportTypeSelector(),
-  const SizedBox(height: AppSpacing.lg),
+                      // Report type selector
+                      _buildReportTypeSelector(),
+                      const SizedBox(height: AppSpacing.lg),
 
-  // Summary cards
-  _buildSummaryCards(dashboardProvider),
-  const SizedBox(height: AppSpacing.lg),
+                      // Summary cards
+                      _buildSummaryCards(dashboardProvider),
+                      const SizedBox(height: AppSpacing.lg),
 
-  // Trend chart
-  _buildTrendChart(analysisProvider),
-  const SizedBox(height: AppSpacing.lg),
+                      // Trend chart
+                      _buildTrendChart(analysisProvider),
+                      const SizedBox(height: AppSpacing.lg),
 
-  // Export buttons
-  _buildExportButtons(),
-  const SizedBox(height: AppSpacing.xl),
-  ],
-  ),
+                      // Export buttons
+                      _buildExportButtons(),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+                  ),
                 ),
               ),
             ],

@@ -191,6 +191,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
   static const double _maxZoom = 5.0;
   static const double _zoomStep = 0.5;
 
+  // ── Panel resize state ──
+  double _leftPanelRatio = 0.50; // ratio of total width for left panel
+  static const double _minLeftRatio = 0.25;
+  static const double _maxLeftRatio = 0.75;
+  bool _isDraggingDivider = false;
+
   @override
   void initState() {
     super.initState();
@@ -389,42 +395,56 @@ class _CaptureScreenState extends State<CaptureScreen> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      flex: 5,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(flex: 7, child: _buildImagePreview(hasImage)),
-                          const SizedBox(height: AppSpacing.sm),
-                          _buildCompactSamples(),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      flex: 5,
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.zero,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildCompactModeSelector(),
-                            const SizedBox(height: AppSpacing.sm),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final totalWidth = constraints.maxWidth;
+                    final dividerWidth = 10.0;
+                    final leftWidth = (totalWidth - dividerWidth) * _leftPanelRatio;
+                    final rightWidth = (totalWidth - dividerWidth) * (1 - _leftPanelRatio);
 
-                            _buildCompactMetadata(),
-                            const SizedBox(height: AppSpacing.sm),
-                            SizedBox(
-                              height: 160,
-                              child: _buildHistorySection(analysisProvider),
-                            ),
-                          ],
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ── Left panel: Image Preview + Samples ──
+                        SizedBox(
+                          width: leftWidth,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(flex: 7, child: _buildImagePreview(hasImage)),
+                              const SizedBox(height: AppSpacing.sm),
+                              _buildCompactSamples(),
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
+
+                        // ── Resizable divider ──
+                        _buildResizeDivider(),
+
+                        // ── Right panel: Metadata + History ──
+                        SizedBox(
+                          width: rightWidth,
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.zero,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildCompactModeSelector(),
+                                const SizedBox(height: AppSpacing.sm),
+
+                                _buildCompactMetadata(),
+                                const SizedBox(height: AppSpacing.sm),
+                                SizedBox(
+                                  height: 160,
+                                  child: _buildHistorySection(analysisProvider),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -644,6 +664,52 @@ class _CaptureScreenState extends State<CaptureScreen> {
         ),
         child: Icon(icon, size: 14,
           color: disabled ? AppColors.textMuted : AppColors.accentPrimary),
+      ),
+    );
+  }
+
+  // ============================================================
+  // RESIZABLE DIVIDER — Drag to resize panels
+  // ============================================================
+
+  Widget _buildResizeDivider() {
+    final isActive = _isDraggingDivider;
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: GestureDetector(
+        onHorizontalDragStart: (_) => setState(() => _isDraggingDivider = true),
+        onHorizontalDragEnd: (_) => setState(() => _isDraggingDivider = false),
+        onHorizontalDragCancel: () => setState(() => _isDraggingDivider = false),
+        onHorizontalDragUpdate: (details) {
+          // Find the Row's width to calculate ratio
+          final box = context.findRenderObject() as RenderBox?;
+          if (box == null) return;
+          final totalWidth = box.size.width - 10; // minus divider
+          final currentLeft = totalWidth * _leftPanelRatio;
+          final newLeft = (currentLeft + details.delta.dx).clamp(totalWidth * _minLeftRatio, totalWidth * _maxLeftRatio);
+          final newRatio = newLeft / totalWidth;
+          if ((newRatio - _leftPanelRatio).abs() > 0.001) {
+            setState(() => _leftPanelRatio = newRatio);
+          }
+        },
+        child: Container(
+          width: 10,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.accentPrimary.withOpacity(0.3) : Colors.transparent,
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: Center(
+            child: Container(
+              width: 3,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.accentPrimary : AppColors.borderMedium,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

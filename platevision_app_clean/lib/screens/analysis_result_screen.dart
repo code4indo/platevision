@@ -443,6 +443,60 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
   String _classFilter = 'all';
   int _hoveredDetectionIndex = -1;
 
+  // ── Zoom state ──
+  final TransformationController _zoomController = TransformationController();
+  double _currentZoom = 1.0;
+  static const double _minZoom = 1.0;
+  static const double _maxZoom = 5.0;
+  static const double _zoomStep = 0.5;
+
+  // ── Panel resize state (horizontal) ──
+  double _leftPanelRatio = 0.60;
+  static const double _minLeftRatio = 0.30;
+  static const double _maxLeftRatio = 0.80;
+  bool _isDraggingDivider = false;
+
+  // ── Vertical resize state (image vs filter bar) ──
+  double _imagePanelRatio = 0.88;
+  static const double _minImageRatio = 0.50;
+  static const double _maxImageRatio = 0.96;
+  bool _isDraggingVDivider = false;
+
+  @override
+  void dispose() {
+    _zoomController.dispose();
+    super.dispose();
+  }
+
+  void _resetZoom() {
+    _zoomController.value = Matrix4.identity();
+    setState(() => _currentZoom = 1.0);
+  }
+
+  void _zoomIn() {
+    final newZoom = (_currentZoom + _zoomStep).clamp(_minZoom, _maxZoom);
+    if (newZoom != _currentZoom) {
+      _zoomController.value = Matrix4.identity()..scale(newZoom);
+      setState(() => _currentZoom = newZoom);
+    }
+  }
+
+  void _zoomOut() {
+    final newZoom = (_currentZoom - _zoomStep).clamp(_minZoom, _maxZoom);
+    if (newZoom != _currentZoom) {
+      _zoomController.value = Matrix4.identity()..scale(newZoom);
+      setState(() => _currentZoom = newZoom);
+    }
+  }
+
+  void _onZoomChanged(Matrix4 matrix) {
+    final scale = matrix.getMaxScaleOnAxis();
+    final clamped = scale.clamp(_minZoom, _maxZoom);
+    if (clamped != _currentZoom) {
+      setState(() => _currentZoom = clamped);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ap = context.watch<AnalysisProvider>();
@@ -465,23 +519,48 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgScaffold,
       appBar: _buildAppBar(result, severityColor),
-      body: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Expanded(flex: 6, child: Padding(padding: const EdgeInsets.all(AppSpacing.md), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Expanded(child: _buildDetectionImage(result, detections, imageBytes)),
-          const SizedBox(height: AppSpacing.sm),
-          _buildClassFilterBar(result),
-        ]))),
-        Expanded(flex: 4, child: SingleChildScrollView(padding: const EdgeInsets.fromLTRB(0, AppSpacing.md, AppSpacing.md, AppSpacing.md), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          _buildColonyCountHero(colonyCount, severity, severityColor, result),
-          const SizedBox(height: AppSpacing.md),
-          if (_hoveredDetectionIndex >= 0 && _hoveredDetectionIndex < detections.length) _buildHoveredInfoCard(detections[_hoveredDetectionIndex]),
-          if (_hoveredDetectionIndex >= 0 && _hoveredDetectionIndex < detections.length) const SizedBox(height: AppSpacing.md),
-          _buildDetectionBreakdown(result, detections), const SizedBox(height: AppSpacing.md),
-          _buildViewToggleInfo(), const SizedBox(height: AppSpacing.md),
-          _buildDetailsCard(result), const SizedBox(height: AppSpacing.md),
-          _buildSampleMetadata(result),
-        ]))),
-      ]),
+      body: LayoutBuilder(builder: (context, constraints) {
+        final totalWidth = constraints.maxWidth;
+        final dividerWidth = 10.0;
+        final leftWidth = (totalWidth - dividerWidth) * _leftPanelRatio;
+        final rightWidth = (totalWidth - dividerWidth) * (1 - _leftPanelRatio);
+
+        return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          // ── Left panel: Image + Filter (resizable) ──
+          SizedBox(
+            width: leftWidth,
+            child: Padding(padding: const EdgeInsets.all(AppSpacing.md), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Expanded(
+                flex: (_imagePanelRatio * 1000).round(),
+                child: _buildDetectionImage(result, detections, imageBytes),
+              ),
+              _buildVerticalResizeDivider(),
+              Expanded(
+                flex: ((1 - _imagePanelRatio) * 1000).round(),
+                child: _buildClassFilterBar(result),
+              ),
+            ])),
+          ),
+
+          // ── Horizontal resize divider ──
+          _buildHorizontalResizeDivider(),
+
+          // ── Right panel: Details ──
+          SizedBox(
+            width: rightWidth,
+            child: SingleChildScrollView(padding: const EdgeInsets.fromLTRB(0, AppSpacing.md, AppSpacing.md, AppSpacing.md), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              _buildColonyCountHero(colonyCount, severity, severityColor, result),
+              const SizedBox(height: AppSpacing.md),
+              if (_hoveredDetectionIndex >= 0 && _hoveredDetectionIndex < detections.length) _buildHoveredInfoCard(detections[_hoveredDetectionIndex]),
+              if (_hoveredDetectionIndex >= 0 && _hoveredDetectionIndex < detections.length) const SizedBox(height: AppSpacing.md),
+              _buildDetectionBreakdown(result, detections), const SizedBox(height: AppSpacing.md),
+              _buildViewToggleInfo(), const SizedBox(height: AppSpacing.md),
+              _buildDetailsCard(result), const SizedBox(height: AppSpacing.md),
+              _buildSampleMetadata(result),
+            ])),
+          ),
+        ]);
+      }),
     );
   }
 
@@ -496,17 +575,147 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
 
   Widget _buildDetectionImage(AnalysisResult result, List<DetectionResult> detections, Uint8List? imageBytes) {
     final hasImage = imageBytes != null;
+    final isZoomed = _currentZoom > 1.0;
     return Container(
-      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(AppSpacing.radiusMd), border: Border.all(color: _showOriginal ? AppColors.borderSubtle : AppColors.accentPrimary.withOpacity(0.5), width: _showOriginal ? 1 : 2), boxShadow: [if (!_showOriginal) BoxShadow(color: AppColors.accentPrimary.withOpacity(0.08), blurRadius: 12, spreadRadius: 2)]),
+      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(AppSpacing.radiusMd), border: Border.all(color: isZoomed ? AppColors.accentPrimary.withOpacity(0.5) : (_showOriginal ? AppColors.borderSubtle : AppColors.accentPrimary.withOpacity(0.5)), width: isZoomed ? 2 : (_showOriginal ? 1 : 2)), boxShadow: [if (!_showOriginal || isZoomed) BoxShadow(color: AppColors.accentPrimary.withOpacity(0.08), blurRadius: 12, spreadRadius: 2)]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(color: AppColors.bgSecondary, borderRadius: BorderRadius.only(topLeft: Radius.circular(AppSpacing.radiusMd), topRight: Radius.circular(AppSpacing.radiusMd)), border: Border(bottom: BorderSide(color: AppColors.borderSubtle))),
-          child: Row(children: [Icon(_showOriginal ? Icons.image_outlined : Icons.auto_fix_high_rounded, size: 16, color: _showOriginal ? AppColors.textTertiary : AppColors.accentPrimary), const SizedBox(width: 8), Text(_showOriginal ? 'ORIGINAL IMAGE' : 'GAMBAR HASIL IDENTIFIKASI', style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.w700, color: _showOriginal ? AppColors.textTertiary : AppColors.accentPrimary, letterSpacing: 1.5)), const Spacer(),
-            if (!_showOriginal) ...[Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: AppColors.info.withOpacity(0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: AppColors.info.withOpacity(0.3))), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.touch_app_rounded, size: 12, color: AppColors.info), const SizedBox(width: 4), Text('HOVER/CLICK', style: GoogleFonts.jetBrainsMono(fontSize: 8, fontWeight: FontWeight.w700, color: AppColors.info, letterSpacing: 1))])),],
+          child: Row(children: [
+            Icon(isZoomed ? Icons.zoom_in_rounded : (_showOriginal ? Icons.image_outlined : Icons.auto_fix_high_rounded), size: 16, color: isZoomed ? AppColors.accentPrimary : (_showOriginal ? AppColors.textTertiary : AppColors.accentPrimary)),
+            const SizedBox(width: 8),
+            Text(isZoomed ? 'ZOOM ${_currentZoom.toStringAsFixed(1)}x' : (_showOriginal ? 'ORIGINAL IMAGE' : 'GAMBAR HASIL IDENTIFIKASI'), style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.w700, color: isZoomed ? AppColors.accentPrimary : (_showOriginal ? AppColors.textTertiary : AppColors.accentPrimary), letterSpacing: 1.5)),
+            const Spacer(),
+            // ── Zoom controls ──
+            if (hasImage && !_showOriginal) ...[
+              _buildZoomBtn(Icons.remove_rounded, _zoomOut, _currentZoom <= _minZoom),
+              const SizedBox(width: 3),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: AppColors.bgInput, borderRadius: BorderRadius.circular(3), border: Border.all(color: AppColors.borderSubtle)),
+                child: Text('${_currentZoom.toStringAsFixed(1)}x', style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+              ),
+              const SizedBox(width: 3),
+              _buildZoomBtn(Icons.add_rounded, _zoomIn, _currentZoom >= _maxZoom),
+              if (isZoomed) ...[const SizedBox(width: 4), _buildZoomBtn(Icons.refresh_rounded, _resetZoom, false)],
+              const SizedBox(width: 8),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: AppColors.info.withOpacity(0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: AppColors.info.withOpacity(0.3))), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.touch_app_rounded, size: 12, color: AppColors.info), const SizedBox(width: 4), Text('HOVER', style: GoogleFonts.jetBrainsMono(fontSize: 8, fontWeight: FontWeight.w700, color: AppColors.info, letterSpacing: 1))])),
+            ],
           ])),
         Expanded(child: ClipRRect(borderRadius: BorderRadius.only(bottomLeft: Radius.circular(AppSpacing.radiusMd), bottomRight: Radius.circular(AppSpacing.radiusMd)),
-          child: hasImage ? InteractiveDetectionImage(imageBytes: imageBytes!, result: result, detections: detections, showOriginal: _showOriginal, onHoverChanged: (idx) => setState(() => _hoveredDetectionIndex = idx))
+          child: hasImage ? InteractiveViewer(
+              transformationController: _zoomController,
+              minScale: _minZoom,
+              maxScale: _maxZoom,
+              onInteractionUpdate: (details) => _onZoomChanged(_zoomController.value),
+              child: InteractiveDetectionImage(imageBytes: imageBytes!, result: result, detections: detections, showOriginal: _showOriginal, onHoverChanged: (idx) => setState(() => _hoveredDetectionIndex = idx)),
+            )
             : Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.broken_image_outlined, size: 40, color: AppColors.textMuted), const SizedBox(height: 8), Text('Image data not available', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted))])))),
       ]),
+    );
+  }
+
+  Widget _buildZoomBtn(IconData icon, VoidCallback onTap, bool disabled) {
+    return GestureDetector(
+      onTap: disabled ? null : onTap,
+      child: Container(
+        width: 24, height: 24,
+        decoration: BoxDecoration(
+          color: disabled ? AppColors.bgInput : AppColors.accentPrimary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: disabled ? AppColors.borderSubtle : AppColors.accentPrimary.withOpacity(0.3), width: 1),
+        ),
+        child: Icon(icon, size: 14, color: disabled ? AppColors.textMuted : AppColors.accentPrimary),
+      ),
+    );
+  }
+
+  // ============================================================
+  // HORIZONTAL RESIZE DIVIDER
+  // ============================================================
+
+  Widget _buildHorizontalResizeDivider() {
+    final isActive = _isDraggingDivider;
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: GestureDetector(
+        onHorizontalDragStart: (_) => setState(() => _isDraggingDivider = true),
+        onHorizontalDragEnd: (_) => setState(() => _isDraggingDivider = false),
+        onHorizontalDragCancel: () => setState(() => _isDraggingDivider = false),
+        onHorizontalDragUpdate: (details) {
+          final box = context.findRenderObject() as RenderBox?;
+          if (box == null) return;
+          final totalW = box.size.width - 10;
+          final currentLeft = totalW * _leftPanelRatio;
+          final newLeft = (currentLeft + details.delta.dx).clamp(totalW * _minLeftRatio, totalW * _maxLeftRatio);
+          final newRatio = newLeft / totalW;
+          if ((newRatio - _leftPanelRatio).abs() > 0.001) {
+            setState(() => _leftPanelRatio = newRatio);
+          }
+        },
+        child: Container(
+          width: 10,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.accentPrimary.withOpacity(0.3) : Colors.transparent,
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: Center(
+            child: Container(
+              width: 3, height: 40,
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.accentPrimary : AppColors.borderMedium,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // VERTICAL RESIZE DIVIDER
+  // ============================================================
+
+  Widget _buildVerticalResizeDivider() {
+    final isActive = _isDraggingVDivider;
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeRow,
+      child: GestureDetector(
+        onVerticalDragStart: (_) => setState(() => _isDraggingVDivider = true),
+        onVerticalDragEnd: (_) => setState(() => _isDraggingVDivider = false),
+        onVerticalDragCancel: () => setState(() => _isDraggingVDivider = false),
+        onVerticalDragUpdate: (details) {
+          final box = context.findRenderObject() as RenderBox?;
+          if (box == null) return;
+          final totalH = box.size.height;
+          final dividerH = 8.0;
+          final usable = totalH - dividerH;
+          final currentImg = usable * _imagePanelRatio;
+          final newImg = (currentImg + details.delta.dy).clamp(usable * _minImageRatio, usable * _maxImageRatio);
+          final newRatio = newImg / usable;
+          if ((newRatio - _imagePanelRatio).abs() > 0.001) {
+            setState(() => _imagePanelRatio = newRatio);
+          }
+        },
+        child: Container(
+          height: 8,
+          margin: const EdgeInsets.symmetric(horizontal: 30),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.accentPrimary.withOpacity(0.3) : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Center(
+            child: Container(
+              width: 40, height: 3,
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.accentPrimary : AppColors.borderMedium,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

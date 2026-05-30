@@ -133,7 +133,7 @@ class DetectionOverlayPainter extends CustomPainter {
         final labelWidth = paragraph.longestLine + 8;
 
         // FIX: clamp posisi X agar label tidak keluar batas kanan canvas
-        final labelX = displayRect.left.clamp(0.0, max(0.0, size.width - labelWidth));
+        final labelX = displayRect.left.clamp(0.0, max(0.0, size.width - labelWidth)).toDouble();
 
         final labelBg = Rect.fromLTWH(
           labelX,

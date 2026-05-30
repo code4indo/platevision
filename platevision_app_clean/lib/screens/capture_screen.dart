@@ -197,6 +197,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
   static const double _maxLeftRatio = 0.75;
   bool _isDraggingDivider = false;
 
+  // ── Vertical resize state (image vs samples) ──
+  double _imagePanelRatio = 0.78; // ratio of left panel height for image preview
+  static const double _minImageRatio = 0.40;
+  static const double _maxImageRatio = 0.92;
+  bool _isDraggingVDivider = false;
+
   @override
   void initState() {
     super.initState();
@@ -405,15 +411,21 @@ class _CaptureScreenState extends State<CaptureScreen> {
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // ── Left panel: Image Preview + Samples ──
+                        // ── Left panel: Image Preview + Samples (vertically resizable) ──
                         SizedBox(
                           width: leftWidth,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Expanded(flex: 7, child: _buildImagePreview(hasImage)),
-                              const SizedBox(height: AppSpacing.sm),
-                              _buildCompactSamples(),
+                              Expanded(
+                                flex: (_imagePanelRatio * 1000).round(),
+                                child: _buildImagePreview(hasImage),
+                              ),
+                              _buildVerticalResizeDivider(),
+                              Expanded(
+                                flex: ((1 - _imagePanelRatio) * 1000).round(),
+                                child: _buildCompactSamples(),
+                              ),
                             ],
                           ),
                         ),
@@ -703,6 +715,56 @@ class _CaptureScreenState extends State<CaptureScreen> {
             child: Container(
               width: 3,
               height: 40,
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.accentPrimary : AppColors.borderMedium,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // VERTICAL RESIZE DIVIDER — Drag to resize image/samples height
+  // ============================================================
+
+  Widget _buildVerticalResizeDivider() {
+    final isActive = _isDraggingVDivider;
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeRow,
+      child: GestureDetector(
+        onVerticalDragStart: (_) => setState(() => _isDraggingVDivider = true),
+        onVerticalDragEnd: (_) => setState(() => _isDraggingVDivider = false),
+        onVerticalDragCancel: () => setState(() => _isDraggingVDivider = false),
+        onVerticalDragUpdate: (details) {
+          // Find the left panel Column height
+          final leftColumn = context.findRenderObject() as RenderBox?;
+          if (leftColumn == null) return;
+          // Use the left panel's actual height
+          // We calculate from the overall available height minus padding
+          final totalHeight = leftColumn.size.height;
+          final dividerH = 8.0;
+          final usable = totalHeight - dividerH;
+          final currentImg = usable * _imagePanelRatio;
+          final newImg = (currentImg + details.delta.dy).clamp(usable * _minImageRatio, usable * _maxImageRatio);
+          final newRatio = newImg / usable;
+          if ((newRatio - _imagePanelRatio).abs() > 0.001) {
+            setState(() => _imagePanelRatio = newRatio);
+          }
+        },
+        child: Container(
+          height: 8,
+          margin: const EdgeInsets.symmetric(horizontal: 30),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.accentPrimary.withOpacity(0.3) : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Center(
+            child: Container(
+              width: 40,
+              height: 3,
               decoration: BoxDecoration(
                 color: isActive ? AppColors.accentPrimary : AppColors.borderMedium,
                 borderRadius: BorderRadius.circular(2),

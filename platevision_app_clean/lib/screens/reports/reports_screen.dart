@@ -669,9 +669,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: history.isEmpty
           ? _buildEmptyHistory()
           : Column(
-              children: history.take(10).toList().asMap().entries.map((entry) {
-                return _buildReportCard(entry.value, analysisProvider, index: entry.key);
-              }).toList(),
+              children: [
+                // Header row
+                _buildHistoryHeader(),
+                const Divider(height: 1, color: AppColors.borderSubtle),
+                ...history.take(10).toList().asMap().entries.map((entry) {
+                  return _buildReportCard(entry.value, analysisProvider, index: entry.key);
+                }),
+              ],
             ),
     );
   }
@@ -732,6 +737,86 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 22 + 6), // spacer for index badge
+          Expanded(
+            flex: 3,
+            child: Text(
+              'SAMPLE ID',
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 7,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            flex: 2,
+            child: Text(
+              'TYPE',
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 7,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            flex: 2,
+            child: Text(
+              'PLATE',
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 7,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            flex: 2,
+            child: Text(
+              'TIME',
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 7,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          SizedBox(
+            width: 42,
+            child: Text(
+              'CONF',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 7,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4 + 24), // spacer for delete icon
+        ],
       ),
     );
   }
@@ -802,7 +887,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Container(
                 width: 22,
                 height: 22,
-                margin: const EdgeInsets.only(right: 8),
+                margin: const EdgeInsets.only(right: 6),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.accentPrimary
@@ -823,65 +908,90 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     : Text('${index + 1}', style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
               ),
 
-              // Date
-              SizedBox(
-                width: 70,
+              // ── Col 1: Sample ID ──
+              Expanded(
+                flex: 3,
                 child: Text(
-                  _formatDate(analysis.timestamp),
+                  analysis.sampleId.isNotEmpty
+                      ? analysis.sampleId
+                      : analysis.id.substring(0, 8),
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 0.3,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 4),
+
+              // ── Col 2: Sample Type ──
+              Expanded(
+                flex: 2,
+                child: Text(
+                  analysis.sampleType.isNotEmpty
+                      ? analysis.sampleType
+                      : '-',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.accentSecondary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 4),
+
+              // ── Col 3: Plate Number ──
+              Expanded(
+                flex: 2,
+                child: Text(
+                  analysis.plateReplicate.isNotEmpty
+                      ? analysis.plateReplicate
+                      : '-',
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 9,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,
-                    letterSpacing: 0.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 4),
+
+              // ── Col 4: Waktu ──
+              Expanded(
+                flex: 2,
+                child: Text(
+                  _formatDateTime(analysis.timestamp),
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ),
+              const SizedBox(width: 4),
 
-              // Colony count
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.colonyColor,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${analysis.colonyCount} colonies',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Stats
-              Text(
-                '${analysis.totalDetections} obj',
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: 9,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
+              // ── Col 5: Avg Confidence ──
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                width: 42,
+                height: 28,
                 decoration: BoxDecoration(
                   color: AppColors.accentPrimary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: AppColors.accentPrimary.withOpacity(0.2),
+                    width: 1,
+                  ),
                 ),
+                alignment: Alignment.center,
                 child: Text(
                   '${(analysis.averageConfidence * 100).toStringAsFixed(0)}%',
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 9,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.accentPrimary,
                   ),
                 ),
@@ -889,7 +999,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
               // Delete icon (only when NOT in selection mode)
               if (!_isSelectionMode) ...[
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: 4),
                 GestureDetector(
                   onTap: () => _confirmAndDeleteSingle(analysis, analysisProvider),
                   child: Container(
@@ -905,7 +1015,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
               ] else ...[
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: 4),
                 Icon(
                   Icons.analytics_outlined,
                   size: 16,
@@ -1232,5 +1342,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   String _formatDate(DateTime dt) {
     return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDateTime(DateTime dt) {
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final day = dt.day.toString().padLeft(2, '0');
+    final month = dt.month.toString().padLeft(2, '0');
+    return '$day/$month ${dt.year} $hour:$minute';
   }
 }

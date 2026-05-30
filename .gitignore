@@ -53,8 +53,8 @@ gradio_v2_app_backup.py
 # Sample images
 samples/
 
-# Flutter & web frontend
-platevision_app_clean/
+# Flutter & web frontend (keep platevision_app_clean tracked)
+# platevision_app_clean/
 platevision_app/
 platevision-web/
 platevision-web-backup*/

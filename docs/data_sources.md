@@ -51,8 +51,10 @@ Raw Data → Download → Extract → Convert to YOLOv8 → Split → Train/Val/
 
 1. **AGAR conversion**: Menggunakan `scipy.ndimage.label` untuk mengekstrak connected components dari segmentation masks. Hal ini menghasilkan bounding box yang akurat tetapi mungkin memasukkan noise sebagai koloni kecil.
 
-2. **Class imbalance**: Hanya 1 kelas ("colony") - tidak ada distingsi antara spesies bakteri yang berbeda.
+2. **Multi-class dataset**: Dataset produksi saat ini (`yolo_v3_production`) menggunakan 4 kelas: colony, bubble, dust, crack. Kelas artifact (bubble/dust/crack) ditambahkan secara sintetis untuk mengatasi false positive pada deteksi koloni.
 
-3. **Dataset size**: Total 294 gambar setelah konversi relatif kecil. Disarankan untuk memperbesar dataset di iterasi berikutnya.
+3. **Dataset size**: Dataset produksi V4 (`yolo_v3_production`) berisi ~5,357 gambar, terdiri dari 3,357 gambar stratified split + 2,000 gambar synthetic colony augmentation (via `augment_colony_v2.py`). Dataset awal V1 hanya 294 gambar single-class.
 
 4. **Image quality**: Gambar berasal dari berbagai sumber dengan pencahayaan, resolusi, dan kualitas yang bervariasi.
+
+5. **Class imbalance mitigation**: Stratified split memastikan minimal 150 instance per kelas di validation set. Synthetic colony augmentation menambahkan 2,000 gambar colony untuk mengurangi class imbalance antara colony dan crack.

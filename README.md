@@ -44,10 +44,10 @@ Kekuatan teknis utama kita bukan hanya modelnya, tapi **cara kita membangun data
 | **Stratified Split** | Split 80/12/8 berdasarkan kelas dominan, memastikan representasi merata | Best practice yang menunjukkan rigour metodologis |
 
 #### Angka yang Perlu Ditekankan Saat Presentasi
-- **7x data expansion**: Dari 588 -> 4,157 images
-- **3 teknik augmentasi data** yang inovatif (bukan sekadar flip/rotate)
+- **9x data expansion**: Dari 588 -> 4,157 images -> 5,357 images (dengan synthetic augmentation)
+- **4 teknik augmentasi data** yang inovatif (bukan sekadar flip/rotate), termasuk crop-paste synthetic colonies
 - **Zero annotator cost**: Semua label dibuat otomatis atau semi-otomatis
-- **mAP50 improvement track**: v1=0.866 (single) -> v2 target >0.85 (4-class, jauh lebih sulit)
+- **mAP50 improvement track**: v1=0.866 (single) -> v3=0.775 (4-class) -> v4=0.9145 (4-class, production)
 
 ---
 
@@ -140,7 +140,7 @@ Kita memiliki jawaban yang solid:
 
 | Pertanyaan Juri | Jawaban Kita |
 |-----------------|--------------|
-| "Bagaimana akurasinya dibanding counting manual?" | Model v1 mAP50=0.866 pada 588 gambar. Model v2 multi-class sedang training. Human inter-rater variability 20-30%, model kita konsisten. |
+| "Bagaimana akurasinya dibanding counting manual?" | Model v4 mAP50=0.9145 pada 5,357 gambar (4-class). Human inter-rater variability 20-30%, model kami konsisten dan melebihi performa manual. |
 | "Bagaimana jika gambar berkualitas rendah?" | Augmentasi training (HSV shift, rotation, scale) mensimulasikan variasi kualitas. Confidence threshold bisa disesuaikan. |
 | "Apakah ini bisa di-deploy di production?" | Ya — MLflow tracking, checkpoint resume, Gradio web app, cloudflared tunnel. Bukan prototype, ini MVP yang production-ready. |
 | "Bagaimana dengan data privacy?" | Inference bisa dilakukan on-premise (tidak perlu cloud). Tidak ada data pasien dalam dataset — hanya foto agar plate. |
@@ -178,7 +178,7 @@ Kita memiliki jawaban yang solid:
 - **Artefak Sintetis**: Generasi annotasi bubble/dust/crack untuk class balancing
 - **MLflow Tracking**: Dashboard monitoring training di https://ml.jatnikonm.tech
 - **Web Interface**: Aplikasi Gradio di https://healthcare.jatnikonm.tech
-- **GPU Training**: NVIDIA RTX A4000 (16GB) GPU 1 pada lambda_one
+- **GPU Training**: 2x NVIDIA RTX A4000 (16GB each) pada lambda_one
 - **Reproducible Notebooks**: 4 notebook berurutan untuk full pipeline reproduction
 - **Checkpoint Resume**: Training bisa dilanjutkan dari last.pt jika terputus
 
@@ -187,18 +187,24 @@ Kita memiliki jawaban yang solid:
 ```
 healtcare/
 ├── models/                          # Model yang sudah dilatih
-│   └── best_plate_count_reader.pt   # YOLOv8s single-class (mAP50=0.866)
+│   ├── best_plate_count_reader.pt   # YOLOv8s single-class (mAP50=0.866)
+│   └── best_v4_production.pt        # YOLOv8m 4-class (mAP50=0.9145) ← CURRENT
 ├── data/                            # Dataset
 │   ├── agar/                        # AGAR dataset (18K+ images)
 │   │   └── dataset/
 │   │       ├── dataset_for_u2net/   # 255 images + segmentation masks
 │   │       └── dataset_for_resnet/  # ~18K classification images
 │   ├── yolo_dataset/                # Single-class YOLO dataset (588 images)
-│   └── yolo_18k_multiclass/         # Multi-class YOLO dataset (4,157 images)
-│       ├── raw/                     # All images + labels before split
-│       ├── train/                   # 3,324 images
-│       ├── val/                     # 497 images
-│       ├── test/                    # 336 images
+│   ├── yolo_18k_multiclass/         # Multi-class YOLO dataset (4,157 images)
+│   │   ├── raw/                     # All images + labels before split
+│   │   ├── train/                   # 3,324 images
+│   │   ├── val/                     # 497 images
+│   │   ├── test/                    # 336 images
+│   │   └── data.yaml                # YOLO config (4 classes)
+│   └── yolo_v3_production/          # Production dataset (~5,357 images, stratified + augmented)
+│       ├── train/                   # Training images (incl. 2,000 synthetic colonies)
+│       ├── val/                     # Stratified validation (min 150/class)
+│       ├── test/                    # Holdout test set
 │       └── data.yaml                # YOLO config (4 classes)
 ├── notebooks/                       # Jupyter notebooks (reproducible)
 │   ├── 01_data_exploration.ipynb    # Eksplorasi & statistik dataset
@@ -232,20 +238,25 @@ healtcare/
 | Synthetic Bubble | Augmentasi | 1,000 | Anotasi bubble pada gambar existing (1-3 per image) |
 | Synthetic Dust | Augmentasi | 800 | Anotasi dust pada gambar existing (3-8 per image) |
 | Synthetic Crack | Augmentasi | 500 | Anotasi crack pada gambar existing (1-2 per image) |
-| **Total** | | **4,157** | Train: 3,324 / Val: 497 / Test: 336 |
+| **Total (18k dataset)** | | **4,157** | Train: 3,324 / Val: 497 / Test: 336 |
+| Synthetic Colony | augment_colony_v2.py | 2,000 | Crop-paste augmentation pada yolo_v3_production |
+| **Total (v3_production)** | | **~5,357** | Stratified + 2,000 synthetic colony augmentations |
 
 ### Model Performance
 
-| Metrik | Single-Class (v1) | Multi-Class (v2, training) |
-|--------|-------------------|---------------------------|
-| Architecture | YOLOv8s | YOLOv8s |
-| Classes | 1 (colony) | 4 (colony/bubble/dust/crack) |
-| Dataset | 588 images | 4,157 images |
-| Training Device | Tesla T4 (Kaggle) | RTX A4000 GPU 1 (lambda_one) |
-| Epochs | 50 | 150 (patience 30) |
-| Batch Size | 16 | 16 |
-| mAP50 | 0.866 | *training in progress* |
-| MLflow | - | https://ml.jatnikonm.tech |
+| Metrik | V1 (Single-Class) | V3 (Multi-Class) | V4 (Production) |
+|--------|-------------------|------------------|-----------------|
+| Architecture | YOLOv8s | YOLOv8s | YOLOv8m |
+| Classes | 1 (colony) | 4 (colony/bubble/dust/crack) | 4 (colony/bubble/dust/crack) |
+| Dataset | 588 images | 4,157 images | 5,357 images (stratified + 2K synthetic) |
+| Training Device | Tesla T4 (Kaggle) | RTX A4000 (lambda_one) | 2x RTX A4000 (lambda_one) |
+| Epochs | 50 | 192 (ES@142) | 150 (patience 40) |
+| mAP50 | 0.866 | 0.775 | **0.9145** |
+| mAP50-95 | 0.604 | 0.525 | **0.6984** |
+| Precision | 0.933 | 0.747 | **0.9235** |
+| Recall | 0.835 | 0.859 | **0.8731** |
+| MLflow | - | https://ml.jatnikonm.tech | https://ml.jatnikonm.tech |
+| Model File | best_plate_count_reader.pt | best_v3_enhanced.pt | **best_v4_production.pt** |
 
 ### Cara Menjalankan
 
@@ -286,7 +297,7 @@ python3 src/train_18k_gpu1.py
 
 ### Teknologi
 
-- **Model**: YOLOv8s (Ultralytics 8.4.48)
+- **Model**: YOLOv8m (Ultralytics 8.4.48) — V4 Production
 - **Framework**: PyTorch + Ultralytics
 - **Tracking**: MLflow 3.12.0
 - **Inference**: CUDA (NVIDIA RTX A4000)

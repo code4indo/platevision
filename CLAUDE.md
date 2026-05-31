@@ -23,7 +23,7 @@ source .venv/bin/activate   # ALWAYS activate venv first!
 ## Key Files
 | File | Purpose |
 |------|---------|
-| `gradio_app.py` | Web UI (main demo), uses `models/best_v3_enhanced.pt` |
+| `gradio_app.py` | Web UI (main demo), uses `models/best_v4_production.pt` |
 | `src/train_v4_production.py` | Latest training script (YOLOv8m) |
 | `src/inference.py` | CLI inference |
 | `src/evaluate.py` | Model evaluation |
@@ -32,9 +32,13 @@ source .venv/bin/activate   # ALWAYS activate venv first!
 | `src/augment_colony_v2.py` | Colony augmentation |
 
 ## Production Dataset
-`data/yolo_v3_production/` — stratified split, 4 classes, use for all new training.
+`data/yolo_v3_production/` — stratified split + 2,000 synthetic colony augmentations (~5,357 images), 4 classes, use for all new training.
 
 ## Current Best Model
+`models/best_v4_production.pt` — mAP50=0.9145, mAP50-95=0.6984, Precision=0.9235, Recall=0.8731
+Architecture: YOLOv8m (25.9M params), Dataset: yolo_v3_production (5,357 images)
+
+### Legacy Model
 `models/best_v3_enhanced.pt` — mAP50=0.775, mAP50-95=0.525, Precision=0.747, Recall=0.859
 
 ## Hardware

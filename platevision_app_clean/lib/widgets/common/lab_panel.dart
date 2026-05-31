@@ -18,6 +18,7 @@ class LabPanel extends StatelessWidget {
   final Color? backgroundColor;
   final Color? borderColor;
   final double borderRadius;
+  final bool expandContent;
 
   // Deprecated legacy params — kept for backward compatibility
   final Color? ledColor;
@@ -35,6 +36,7 @@ class LabPanel extends StatelessWidget {
     this.backgroundColor,
     this.borderColor,
     this.borderRadius = AppSpacing.radiusMd,
+    this.expandContent = false,
     // Deprecated
     this.ledColor,
     this.ledActive = false,
@@ -52,11 +54,14 @@ class LabPanel extends StatelessWidget {
         radius: borderRadius,
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: expandContent ? MainAxisSize.max : MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (hasHeader) _buildHeader(),
-          Padding(padding: padding, child: child),
+          if (expandContent)
+            Expanded(child: Padding(padding: padding, child: child))
+          else
+            Padding(padding: padding, child: child),
           if (footer != null) _buildFooter(),
         ],
       ),

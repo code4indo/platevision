@@ -12,6 +12,7 @@ import 'package:platevision_ai/theme/app_typography.dart';
 import 'package:platevision_ai/theme/app_responsive.dart';
 import 'package:platevision_ai/widgets/common/lab_button.dart';
 import 'package:platevision_ai/widgets/common/lab_input.dart';
+import 'package:platevision_ai/widgets/common/lab_panel.dart';
 import 'package:platevision_ai/models/detection_result.dart';
 import 'package:platevision_ai/providers/analysis_provider.dart';
 import 'package:platevision_ai/providers/auth_provider.dart';
@@ -41,68 +42,484 @@ class SampleImage {
 /// All available sample images (same images used in the Gradio demo).
 const List<SampleImage> kSampleImages = [
   SampleImage(
-    key: 'colony',
-    assetPath: 'assets/images/samples/sample_colony.png',
-    label: 'Colony',
+    key: 'sample_01',
+    assetPath: 'assets/images/samples/sample_01_colony.png',
+    label: 'Colony Sample 1',
     category: 'Per-Class',
     color: AppColors.colonyColor,
     icon: Icons.bubble_chart_rounded,
   ),
   SampleImage(
-    key: 'bubble',
-    assetPath: 'assets/images/samples/sample_bubble.jpg',
-    label: 'Bubble',
+    key: 'sample_02',
+    assetPath: 'assets/images/samples/sample_02_colony.png',
+    label: 'Colony Sample 2',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_03',
+    assetPath: 'assets/images/samples/sample_03_colony.png',
+    label: 'Colony Sample 3',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_04',
+    assetPath: 'assets/images/samples/sample_04_colony.png',
+    label: 'Colony Sample 4',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_05',
+    assetPath: 'assets/images/samples/sample_05_colony.png',
+    label: 'Colony Sample 5',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_06',
+    assetPath: 'assets/images/samples/sample_06_colony.png',
+    label: 'Colony Sample 6',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_07',
+    assetPath: 'assets/images/samples/sample_07_colony.png',
+    label: 'Colony Sample 7',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_08',
+    assetPath: 'assets/images/samples/sample_08_colony.png',
+    label: 'Colony Sample 8',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_09',
+    assetPath: 'assets/images/samples/sample_09_colony.png',
+    label: 'Colony Sample 9',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_10',
+    assetPath: 'assets/images/samples/sample_10_colony.png',
+    label: 'Colony Sample 10',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_11',
+    assetPath: 'assets/images/samples/sample_11_bubble.jpg',
+    label: 'Bubble Sample 11',
     category: 'Per-Class',
     color: AppColors.bubbleColor,
     icon: Icons.water_drop_rounded,
   ),
   SampleImage(
-    key: 'dust',
-    assetPath: 'assets/images/samples/sample_dust.jpg',
-    label: 'Dust',
+    key: 'sample_12',
+    assetPath: 'assets/images/samples/sample_12_bubble.jpg',
+    label: 'Bubble Sample 12',
+    category: 'Per-Class',
+    color: AppColors.bubbleColor,
+    icon: Icons.water_drop_rounded,
+  ),
+  SampleImage(
+    key: 'sample_13',
+    assetPath: 'assets/images/samples/sample_13_bubble.jpg',
+    label: 'Bubble Sample 13',
+    category: 'Per-Class',
+    color: AppColors.bubbleColor,
+    icon: Icons.water_drop_rounded,
+  ),
+  SampleImage(
+    key: 'sample_14',
+    assetPath: 'assets/images/samples/sample_14_bubble.jpg',
+    label: 'Bubble Sample 14',
+    category: 'Per-Class',
+    color: AppColors.bubbleColor,
+    icon: Icons.water_drop_rounded,
+  ),
+  SampleImage(
+    key: 'sample_15',
+    assetPath: 'assets/images/samples/sample_15_bubble.jpg',
+    label: 'Bubble Sample 15',
+    category: 'Per-Class',
+    color: AppColors.bubbleColor,
+    icon: Icons.water_drop_rounded,
+  ),
+  SampleImage(
+    key: 'sample_16',
+    assetPath: 'assets/images/samples/sample_16_bubble.jpg',
+    label: 'Bubble Sample 16',
+    category: 'Per-Class',
+    color: AppColors.bubbleColor,
+    icon: Icons.water_drop_rounded,
+  ),
+  SampleImage(
+    key: 'sample_17',
+    assetPath: 'assets/images/samples/sample_17_bubble.jpg',
+    label: 'Bubble Sample 17',
+    category: 'Per-Class',
+    color: AppColors.bubbleColor,
+    icon: Icons.water_drop_rounded,
+  ),
+  SampleImage(
+    key: 'sample_18',
+    assetPath: 'assets/images/samples/sample_18_bubble.jpg',
+    label: 'Bubble Sample 18',
+    category: 'Per-Class',
+    color: AppColors.bubbleColor,
+    icon: Icons.water_drop_rounded,
+  ),
+  SampleImage(
+    key: 'sample_19',
+    assetPath: 'assets/images/samples/sample_19_bubble.jpg',
+    label: 'Bubble Sample 19',
+    category: 'Per-Class',
+    color: AppColors.bubbleColor,
+    icon: Icons.water_drop_rounded,
+  ),
+  SampleImage(
+    key: 'sample_20',
+    assetPath: 'assets/images/samples/sample_20_bubble.jpg',
+    label: 'Bubble Sample 20',
+    category: 'Per-Class',
+    color: AppColors.bubbleColor,
+    icon: Icons.water_drop_rounded,
+  ),
+  SampleImage(
+    key: 'sample_21',
+    assetPath: 'assets/images/samples/sample_21_dust.jpg',
+    label: 'Dust Sample 21',
     category: 'Per-Class',
     color: AppColors.dustColor,
     icon: Icons.grain_rounded,
   ),
   SampleImage(
-    key: 'crack',
-    assetPath: 'assets/images/samples/sample_crack.jpg',
-    label: 'Crack',
+    key: 'sample_22',
+    assetPath: 'assets/images/samples/sample_22_dust.jpg',
+    label: 'Dust Sample 22',
+    category: 'Per-Class',
+    color: AppColors.dustColor,
+    icon: Icons.grain_rounded,
+  ),
+  SampleImage(
+    key: 'sample_23',
+    assetPath: 'assets/images/samples/sample_23_dust.jpg',
+    label: 'Dust Sample 23',
+    category: 'Per-Class',
+    color: AppColors.dustColor,
+    icon: Icons.grain_rounded,
+  ),
+  SampleImage(
+    key: 'sample_24',
+    assetPath: 'assets/images/samples/sample_24_dust.jpg',
+    label: 'Dust Sample 24',
+    category: 'Per-Class',
+    color: AppColors.dustColor,
+    icon: Icons.grain_rounded,
+  ),
+  SampleImage(
+    key: 'sample_25',
+    assetPath: 'assets/images/samples/sample_25_dust.jpg',
+    label: 'Dust Sample 25',
+    category: 'Per-Class',
+    color: AppColors.dustColor,
+    icon: Icons.grain_rounded,
+  ),
+  SampleImage(
+    key: 'sample_26',
+    assetPath: 'assets/images/samples/sample_26_dust.jpg',
+    label: 'Dust Sample 26',
+    category: 'Per-Class',
+    color: AppColors.dustColor,
+    icon: Icons.grain_rounded,
+  ),
+  SampleImage(
+    key: 'sample_27',
+    assetPath: 'assets/images/samples/sample_27_dust.jpg',
+    label: 'Dust Sample 27',
+    category: 'Per-Class',
+    color: AppColors.dustColor,
+    icon: Icons.grain_rounded,
+  ),
+  SampleImage(
+    key: 'sample_28',
+    assetPath: 'assets/images/samples/sample_28_dust.jpg',
+    label: 'Dust Sample 28',
+    category: 'Per-Class',
+    color: AppColors.dustColor,
+    icon: Icons.grain_rounded,
+  ),
+  SampleImage(
+    key: 'sample_29',
+    assetPath: 'assets/images/samples/sample_29_dust.jpg',
+    label: 'Dust Sample 29',
+    category: 'Per-Class',
+    color: AppColors.dustColor,
+    icon: Icons.grain_rounded,
+  ),
+  SampleImage(
+    key: 'sample_30',
+    assetPath: 'assets/images/samples/sample_30_dust.jpg',
+    label: 'Dust Sample 30',
+    category: 'Per-Class',
+    color: AppColors.dustColor,
+    icon: Icons.grain_rounded,
+  ),
+  SampleImage(
+    key: 'sample_31',
+    assetPath: 'assets/images/samples/sample_31_crack.jpg',
+    label: 'Crack Sample 31',
     category: 'Per-Class',
     color: AppColors.crackColor,
     icon: Icons.show_chart_rounded,
   ),
   SampleImage(
-    key: 'colony_bubble',
-    assetPath: 'assets/images/samples/sample_colony_bubble.jpg',
-    label: 'Colony + Bubble',
-    category: 'Multi-Class',
-    color: AppColors.accentPrimary,
-    icon: Icons.layers_rounded,
+    key: 'sample_32',
+    assetPath: 'assets/images/samples/sample_32_crack.jpg',
+    label: 'Crack Sample 32',
+    category: 'Per-Class',
+    color: AppColors.crackColor,
+    icon: Icons.show_chart_rounded,
   ),
   SampleImage(
-    key: 'real_colony',
-    assetPath: 'assets/images/samples/sample_real_colony.png',
-    label: 'Real Agar Plate',
-    category: 'Real',
-    color: AppColors.success,
-    icon: Icons.science_rounded,
+    key: 'sample_33',
+    assetPath: 'assets/images/samples/sample_33_crack.jpg',
+    label: 'Crack Sample 33',
+    category: 'Per-Class',
+    color: AppColors.crackColor,
+    icon: Icons.show_chart_rounded,
   ),
   SampleImage(
-    key: 'agar_saureus',
-    assetPath: 'assets/images/samples/sample_agar_saureus.png',
-    label: 'S. aureus',
-    category: 'Real',
-    color: AppColors.info,
-    icon: Icons.biotech_rounded,
+    key: 'sample_34',
+    assetPath: 'assets/images/samples/sample_34_crack.jpg',
+    label: 'Crack Sample 34',
+    category: 'Per-Class',
+    color: AppColors.crackColor,
+    icon: Icons.show_chart_rounded,
   ),
   SampleImage(
-    key: 'agar_shigella',
-    assetPath: 'assets/images/samples/sample_agar_shigella.png',
-    label: 'Shigella',
-    category: 'Real',
-    color: AppColors.warning,
-    icon: Icons.biotech_rounded,
+    key: 'sample_35',
+    assetPath: 'assets/images/samples/sample_35_crack.jpg',
+    label: 'Crack Sample 35',
+    category: 'Per-Class',
+    color: AppColors.crackColor,
+    icon: Icons.show_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_36',
+    assetPath: 'assets/images/samples/sample_36_crack.jpg',
+    label: 'Crack Sample 36',
+    category: 'Per-Class',
+    color: AppColors.crackColor,
+    icon: Icons.show_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_37',
+    assetPath: 'assets/images/samples/sample_37_crack.jpg',
+    label: 'Crack Sample 37',
+    category: 'Per-Class',
+    color: AppColors.crackColor,
+    icon: Icons.show_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_38',
+    assetPath: 'assets/images/samples/sample_38_crack.jpg',
+    label: 'Crack Sample 38',
+    category: 'Per-Class',
+    color: AppColors.crackColor,
+    icon: Icons.show_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_39',
+    assetPath: 'assets/images/samples/sample_39_crack.jpg',
+    label: 'Crack Sample 39',
+    category: 'Per-Class',
+    color: AppColors.crackColor,
+    icon: Icons.show_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_40',
+    assetPath: 'assets/images/samples/sample_40_crack.jpg',
+    label: 'Crack Sample 40',
+    category: 'Per-Class',
+    color: AppColors.crackColor,
+    icon: Icons.show_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_41',
+    assetPath: 'assets/images/samples/sample_41_colony.jpg',
+    label: 'Colony Sample 41',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_42',
+    assetPath: 'assets/images/samples/sample_42_colony.jpg',
+    label: 'Colony Sample 42',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_43',
+    assetPath: 'assets/images/samples/sample_43_colony.jpg',
+    label: 'Colony Sample 43',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_44',
+    assetPath: 'assets/images/samples/sample_44_colony.jpg',
+    label: 'Colony Sample 44',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_45',
+    assetPath: 'assets/images/samples/sample_45_colony.jpg',
+    label: 'Colony Sample 45',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_46',
+    assetPath: 'assets/images/samples/sample_46_colony.jpg',
+    label: 'Colony Sample 46',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_47',
+    assetPath: 'assets/images/samples/sample_47_colony.jpg',
+    label: 'Colony Sample 47',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_48',
+    assetPath: 'assets/images/samples/sample_48_colony.jpg',
+    label: 'Colony Sample 48',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_49',
+    assetPath: 'assets/images/samples/sample_49_colony.jpg',
+    label: 'Colony Sample 49',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_50',
+    assetPath: 'assets/images/samples/sample_50_colony.jpg',
+    label: 'Colony Sample 50',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_51',
+    assetPath: 'assets/images/samples/sample_51_colony.jpg',
+    label: 'Colony Sample 51',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_52',
+    assetPath: 'assets/images/samples/sample_52_colony.jpg',
+    label: 'Colony Sample 52',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_53',
+    assetPath: 'assets/images/samples/sample_53_colony.jpg',
+    label: 'Colony Sample 53',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_54',
+    assetPath: 'assets/images/samples/sample_54_colony.jpg',
+    label: 'Colony Sample 54',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_55',
+    assetPath: 'assets/images/samples/sample_55_colony.jpg',
+    label: 'Colony Sample 55',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_56',
+    assetPath: 'assets/images/samples/sample_56_colony.jpg',
+    label: 'Colony Sample 56',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_57',
+    assetPath: 'assets/images/samples/sample_57_colony.jpg',
+    label: 'Colony Sample 57',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_58',
+    assetPath: 'assets/images/samples/sample_58_colony.jpg',
+    label: 'Colony Sample 58',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_59',
+    assetPath: 'assets/images/samples/sample_59_colony.jpg',
+    label: 'Colony Sample 59',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
+  ),
+  SampleImage(
+    key: 'sample_60',
+    assetPath: 'assets/images/samples/sample_60_colony.jpg',
+    label: 'Colony Sample 60',
+    category: 'Per-Class',
+    color: AppColors.colonyColor,
+    icon: Icons.bubble_chart_rounded,
   ),
 ];
 
@@ -140,6 +557,7 @@ class CaptureScreen extends StatefulWidget {
 }
 
 class _CaptureScreenState extends State<CaptureScreen> {
+  final ScrollController _galleryScrollController = ScrollController();
   // ── Free-text controllers ──
   // Category 1: Sample Information
   final _sampleIdController = TextEditingController();
@@ -219,6 +637,14 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
     final authProvider = context.read<AuthProvider>();
     _analystNameController.text = authProvider.currentUser?.fullName ?? '';
+
+    // Set default sample synchronously
+    try {
+      _selectedSample = kSampleImages.firstWhere((s) => s.key == 'sample_02');
+      _selectSampleImage(_selectedSample!); // load bytes async
+    } catch (e) {
+      debugPrint('Failed to load default sample: $e');
+    }
   }
 
   /// Auto-generate Sample ID with format: SPL-YYYYMMDD-HHMMSS
@@ -229,6 +655,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
   @override
   void dispose() {
+    _galleryScrollController.dispose();
     _sampleIdController.dispose();
     _samplingTimeController.dispose();
     _samplingLocationController.dispose();
@@ -390,7 +817,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   @override
   Widget build(BuildContext context) {
     final analysisProvider = context.watch<AnalysisProvider>();
-    final hasImage = _pickedImageBytes != null || _sampleBytes != null;
+    final hasImage = _pickedImageBytes != null || _selectedSample != null || _sampleBytes != null;
 
     final content = Container(
       color: AppColors.bgScaffold,
@@ -421,6 +848,8 @@ class _CaptureScreenState extends State<CaptureScreen> {
                                 flex: (_imagePanelRatio * 1000).round(),
                                 child: _buildImagePreview(hasImage),
                               ),
+                              const SizedBox(height: AppSpacing.sm),
+                              _buildCompactModeSelector(),
                               _buildVerticalResizeDivider(),
                               Expanded(
                                 flex: ((1 - _imagePanelRatio) * 1000).round(),
@@ -436,22 +865,15 @@ class _CaptureScreenState extends State<CaptureScreen> {
                         // ── Right panel: Metadata + History ──
                         SizedBox(
                           width: rightWidth,
-                          child: SingleChildScrollView(
-                            padding: EdgeInsets.zero,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildCompactModeSelector(),
-                                const SizedBox(height: AppSpacing.sm),
-
-                                _buildCompactMetadata(),
-                                const SizedBox(height: AppSpacing.sm),
-                                SizedBox(
-                                  height: 160,
-                                  child: _buildHistorySection(analysisProvider),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  child: _buildCompactMetadata(),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -623,7 +1045,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
                       child: SizedBox.expand(
                         child: _pickedImageBytes != null
                           ? Image.memory(_pickedImageBytes!, fit: BoxFit.contain)
-                          : Image.memory(_sampleBytes!, fit: BoxFit.contain),
+                          : (_sampleBytes != null
+                              ? Image.memory(_sampleBytes!, fit: BoxFit.contain)
+                              : Image.asset(_selectedSample!.assetPath, fit: BoxFit.contain)),
                       ),
                     ),
                     // Sample label badge
@@ -797,22 +1221,47 @@ class _CaptureScreenState extends State<CaptureScreen> {
           Text('tap to preview', style: GoogleFonts.jetBrainsMono(fontSize: 9, color: AppColors.textMuted)),
         ]),
         const SizedBox(height: 4),
-        LayoutBuilder(builder: (context, constraints) {
-          final gridWidth = constraints.maxWidth;
-          final colCount = 8;
-          final gap = 3.0;
-          final cellSize = (gridWidth - (gap * (colCount - 1))) / colCount;
+        Expanded(
+          child: LayoutBuilder(builder: (context, constraints) {
+            final gridHeight = constraints.maxHeight;
+            final gridWidth = constraints.maxWidth;
+            final gap = 4.0;
+            
+            final cols = 10;
+            final rows = 4;
+            final cellWidth = (gridWidth - ((cols - 1) * gap)) / cols;
+            final cellHeight = (gridHeight - ((rows - 1) * gap)) / rows;
+            
+            // Safe fallback if constraints are weird
+            final safeRatio = (cellWidth > 0 && cellHeight > 0) ? (cellWidth / cellHeight) : 1.0;
 
-          return Row(
-            children: kSampleImages.map((s) {
-              final isSelected = _selectedSample?.key == s.key;
-              return Padding(
-                padding: EdgeInsets.only(right: gap),
-                child: GestureDetector(
-                  onTap: () => _selectSampleImage(s),
-                  child: Container(
-                    width: cellSize - gap,
-                    height: cellSize - gap,
+            return RawScrollbar(
+              controller: _galleryScrollController,
+              thumbColor: AppColors.accentPrimary.withOpacity(0.5),
+              thickness: 6.0,
+              radius: const Radius.circular(3.0),
+              thumbVisibility: true,
+              child: GridView.builder(
+                controller: _galleryScrollController,
+                physics: const BouncingScrollPhysics(),
+                itemCount: kSampleImages.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: cols,
+                  mainAxisSpacing: gap,
+                  crossAxisSpacing: gap,
+                  childAspectRatio: safeRatio,
+                ),
+                itemBuilder: (context, index) {
+                  final s = kSampleImages[index];
+                  final isSelected = _selectedSample?.key == s.key;
+                  final iconSize = (cellHeight * 0.25).clamp(6.0, 16.0);
+                  final checkIconSize = (cellHeight * 0.2).clamp(5.0, 12.0);
+                  final checkContainerSize = (cellHeight * 0.3).clamp(8.0, 18.0);
+                  final fSize = (cellHeight * 0.12).clamp(4.0, 9.0);
+                  
+                  return GestureDetector(
+                    onTap: () => _selectSampleImage(s),
+                    child: Container(
                     decoration: BoxDecoration(
                       color: isSelected ? s.color.withOpacity(0.15) : AppColors.bgInput,
                       borderRadius: BorderRadius.circular(4),
@@ -834,7 +1283,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                             fit: BoxFit.cover,
                             errorBuilder: (ctx, err, _) => Container(
                               color: s.color.withOpacity(0.1),
-                              child: Center(child: Icon(s.icon, size: 12, color: s.color.withOpacity(0.5))),
+                              child: Center(child: Icon(s.icon, size: iconSize, color: s.color.withOpacity(0.5))),
                             ),
                           ),
                         ),
@@ -846,45 +1295,20 @@ class _CaptureScreenState extends State<CaptureScreen> {
                             ),
                             child: Center(
                               child: Container(
-                                width: 14, height: 14,
+                                width: checkContainerSize, height: checkContainerSize,
                                 decoration: BoxDecoration(color: s.color, shape: BoxShape.circle),
-                                child: Icon(Icons.check_rounded, size: 9, color: Colors.white),
+                                child: Icon(Icons.check_rounded, size: checkIconSize, color: Colors.white),
                               ),
                             ),
                           ),
-                        Positioned(
-                          left: 0, right: 0, bottom: 0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 1.5),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.55),
-                              borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(3.5),
-                                bottomRight: Radius.circular(3.5),
-                              ),
-                            ),
-                            child: Text(
-                              s.label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
-                                fontSize: 5.5,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                color: Colors.white,
-                                height: 1.0,
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          );
-        }),
+                );
+              },
+            ));
+          }),
+        ),
       ]),
     );
   }
@@ -1348,266 +1772,5 @@ class _CaptureScreenState extends State<CaptureScreen> {
     ]);
   }
 
-  // ============================================================
-  // HISTORY
-  // ============================================================
 
-  Widget _buildHistorySection(AnalysisProvider ap) {
-    final allHistory = ap.history;
-    final currentSampleId = _currentSampleId;
-    // Filter history by current Sample ID
-    final filteredHistory = allHistory.where((r) => r.sampleId == currentSampleId).toList();
-    final recentHistory = filteredHistory.length > 10 ? filteredHistory.sublist(filteredHistory.length - 10) : filteredHistory;
-    final displayList = recentHistory.reversed.toList();
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-        border: Border.all(color: AppColors.borderSubtle, width: 1),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(Icons.history_rounded, size: 13, color: AppColors.accentSecondary),
-          const SizedBox(width: 4),
-          Text('HISTORY', style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 1.5)),
-          const SizedBox(width: 6),
-          // Show Sample ID filter badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-            decoration: BoxDecoration(color: AppColors.accentPrimary.withOpacity(0.1), borderRadius: BorderRadius.circular(2)),
-            child: Text(currentSampleId, style: GoogleFonts.jetBrainsMono(fontSize: 7, fontWeight: FontWeight.w600, color: AppColors.accentPrimary, letterSpacing: 0.3)),
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-            decoration: BoxDecoration(color: AppColors.accentPrimary.withOpacity(0.1), borderRadius: BorderRadius.circular(3)),
-            child: Text('${filteredHistory.length}', style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.accentPrimary)),
-          ),
-        ]),
-        const SizedBox(height: 5),
-        if (displayList.isEmpty)
-          Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.science_outlined, size: 20, color: AppColors.textMuted.withOpacity(0.4)),
-            const SizedBox(height: 4),
-            Text('No analysis for this sample', style: GoogleFonts.inter(fontSize: 10, color: AppColors.textMuted)),
-          ]))
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            itemCount: displayList.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 3),
-            itemBuilder: (ctx, i) => _buildHistoryItem(displayList[i]),
-          ),
-      ]),
-    );
-  }
-
-  Widget _buildHistoryItem(AnalysisResult result) {
-    final timeStr = _formatTimestamp(result.timestamp);
-    final colonyCount = result.colonyCount;
-    final total = result.totalDetections;
-    final severity = colonyCount > 300 ? 'TNTC' : (colonyCount > 150 ? 'TFTC' : (colonyCount > 30 ? 'IDEAL' : 'LOW'));
-    final severityColor = colonyCount > 300 ? AppColors.error : (colonyCount > 150 ? AppColors.warning : (colonyCount > 30 ? AppColors.success : AppColors.info));
-
-    return GestureDetector(
-      onTap: () => _showHistoryPopup(result),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        decoration: BoxDecoration(
-          color: AppColors.bgInput,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
-          border: Border.all(color: AppColors.borderSubtle, width: 0.5),
-        ),
-        child: Row(children: [
-          Container(
-            width: 32, height: 32,
-            decoration: BoxDecoration(
-              color: severityColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: severityColor.withOpacity(0.3), width: 0.5),
-            ),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text('$colonyCount', style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.w800, color: severityColor, height: 1.0)),
-              Text('CFU', style: GoogleFonts.jetBrainsMono(fontSize: 5, color: severityColor.withOpacity(0.7), height: 1.0)),
-            ]),
-          ),
-          const SizedBox(width: 6),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Text(severity, style: GoogleFonts.jetBrainsMono(fontSize: 7, fontWeight: FontWeight.w700, color: severityColor, letterSpacing: 1)),
-              const SizedBox(width: 4),
-              Text('$total det', style: GoogleFonts.jetBrainsMono(fontSize: 6, color: AppColors.textMuted)),
-            ]),
-            const SizedBox(height: 2),
-            Text(timeStr, style: GoogleFonts.inter(fontSize: 7, color: AppColors.textMuted)),
-          ])),
-          Icon(Icons.chevron_right_rounded, size: 14, color: AppColors.textMuted),
-        ]),
-      ),
-    );
-  }
-
-  String _formatTimestamp(DateTime dt) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }
-
-  void _showHistoryPopup(AnalysisResult result) {
-    final colonyCount = result.colonyCount;
-    final severity = colonyCount > 300 ? 'TNTC' : (colonyCount > 150 ? 'TFTC' : (colonyCount > 30 ? 'IDEAL' : 'LOW'));
-    final severityColor = colonyCount > 300 ? AppColors.error : (colonyCount > 150 ? AppColors.warning : (colonyCount > 30 ? AppColors.success : AppColors.info));
-
-    showDialog(
-      context: context,
-      barrierColor: Colors.black54,
-      builder: (dialogContext) => Dialog(
-        backgroundColor: AppColors.bgScaffold,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520, maxHeight: 560),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.bgSecondary,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                  border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
-                ),
-                child: Row(children: [
-                  Icon(Icons.analytics_rounded, size: 18, color: severityColor),
-                  const SizedBox(width: 8),
-                  Text('ANALYSIS RESULT', style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textPrimary, letterSpacing: 1.5)),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () => Navigator.of(dialogContext).pop(),
-                    child: Container(
-                      width: 28, height: 28,
-                      decoration: BoxDecoration(color: AppColors.bgInput, borderRadius: BorderRadius.circular(6)),
-                      child: Icon(Icons.close_rounded, size: 16, color: AppColors.textTertiary),
-                    ),
-                  ),
-                ]),
-              ),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: severityColor.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: severityColor.withOpacity(0.4)),
-                        ),
-                        child: Text(severity, style: GoogleFonts.jetBrainsMono(fontSize: 14, fontWeight: FontWeight.w800, color: severityColor, letterSpacing: 2)),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('$colonyCount', style: GoogleFonts.jetBrainsMono(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.textPrimary, height: 1.0)),
-                        Text('Colony Count (CFU)', style: GoogleFonts.inter(fontSize: 9, color: AppColors.textMuted)),
-                      ]),
-                    ]),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.bgCard,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.borderSubtle),
-                      ),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('DETECTION BREAKDOWN', style: GoogleFonts.jetBrainsMono(fontSize: 8, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 1.5)),
-                        const SizedBox(height: 8),
-                        _buildPopupCountRow('Colony', result.colonyCount, AppColors.colonyColor),
-                        const SizedBox(height: 4),
-                        _buildPopupCountRow('Bubble', result.bubbleCount, AppColors.bubbleColor),
-                        const SizedBox(height: 4),
-                        _buildPopupCountRow('Dust', result.dustCount, AppColors.dustColor),
-                        const SizedBox(height: 4),
-                        _buildPopupCountRow('Crack', result.crackCount, AppColors.crackColor),
-                        const Divider(height: 16, color: AppColors.borderSubtle),
-                        _buildPopupCountRow('Total', result.totalDetections, AppColors.textPrimary),
-                      ]),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.bgCard,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.borderSubtle),
-                      ),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('DETAILS', style: GoogleFonts.jetBrainsMono(fontSize: 8, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 1.5)),
-                        const SizedBox(height: 8),
-                        _buildPopupDetailRow('Time', _formatTimestamp(result.timestamp)),
-                        const SizedBox(height: 3),
-                        _buildPopupDetailRow('Processing', '${result.processingTime.inMilliseconds} ms'),
-                        const SizedBox(height: 3),
-                        _buildPopupDetailRow('Image Size', '${result.imageWidth} x ${result.imageHeight}'),
-                        const SizedBox(height: 3),
-                        _buildPopupDetailRow('Avg Confidence', '${(result.averageConfidence * 100).toStringAsFixed(1)}%'),
-                        const SizedBox(height: 3),
-                        _buildPopupDetailRow('Model', result.modelVersion),
-                      ]),
-                    ),
-                  ]),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: AppColors.borderSubtle)),
-                ),
-                child: Row(children: [
-                  Text('ID: ${result.id.substring(0, 8)}', style: GoogleFonts.jetBrainsMono(fontSize: 7, color: AppColors.textMuted)),
-                  const Spacer(),
-                  SizedBox(
-                    height: 32,
-                    child: LabButton(
-                      label: 'CLOSE',
-                      variant: LabButtonVariant.secondary,
-                      size: LabButtonSize.sm,
-                      icon: Icons.close_rounded,
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                    ),
-                  ),
-                ]),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPopupCountRow(String label, int count, Color color) {
-    return Row(children: [
-      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
-      const SizedBox(width: 8),
-      Text(label, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary)),
-      const Spacer(),
-      Text('$count', style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-    ]);
-  }
-
-  Widget _buildPopupDetailRow(String label, String value) {
-    return Row(children: [
-      Text(label, style: GoogleFonts.inter(fontSize: 9, color: AppColors.textMuted)),
-      const Spacer(),
-      Text(value, style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
-    ]);
-  }
 }

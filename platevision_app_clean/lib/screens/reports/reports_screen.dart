@@ -30,6 +30,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
   DateTimeRange? _customDateRange;
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
+  final ScrollController _historyScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _historyScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -673,9 +680,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 // Header row
                 _buildHistoryHeader(),
                 const Divider(height: 1, color: AppColors.borderSubtle),
-                ...history.take(10).toList().asMap().entries.map((entry) {
-                  return _buildReportCard(entry.value, analysisProvider, index: entry.key);
-                }),
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 400),
+                  child: RawScrollbar(
+                    controller: _historyScrollController,
+                    thumbColor: AppColors.accentPrimary.withOpacity(0.5),
+                    radius: const Radius.circular(4),
+                    thickness: 4,
+                    thumbVisibility: true,
+                    child: ListView.builder(
+                      controller: _historyScrollController,
+                      padding: const EdgeInsets.only(right: 8, top: 4, bottom: 4),
+                      itemCount: history.length,
+                      itemBuilder: (context, index) {
+                        return _buildReportCard(history[index], analysisProvider, index: index);
+                      },
+                    ),
+                  ),
+                ),
               ],
             ),
     );

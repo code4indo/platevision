@@ -161,8 +161,9 @@ def create_app():
         # ── Sample Images (TABS — saves ~70% vertical space) ──
         sample_categories = {
             "🧫 Colony": sorted([
-                str(f) for f in SAMPLES_DIR.glob("test_colony_0*")
+                str(f) for f in SAMPLES_DIR.glob("test_colony_*")
                 if f.suffix.lower() in ('.jpg', '.jpeg', '.png')
+                and not any(x in f.name for x in ("bubble", "dust", "crack"))
             ]),
             "🫧 Bubble": sorted([
                 str(f) for f in SAMPLES_DIR.glob("test_bubble_*")
@@ -206,14 +207,14 @@ def create_app():
                                 gr.Examples(
                                     examples=cat_files,
                                     inputs=input_image,
-                                    examples_per_page=6,
+                                    examples_per_page=12,
                                 )
                     if original_samples:
                         with gr.Tab(f"📸 Demo ({len(original_samples)})"):
                             gr.Examples(
                                 examples=original_samples,
                                 inputs=input_image,
-                                examples_per_page=6,
+                                examples_per_page=12,
                             )
 
         # ── Model Info (accordion, collapsed) ──

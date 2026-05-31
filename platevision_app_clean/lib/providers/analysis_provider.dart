@@ -405,6 +405,70 @@ class AnalysisProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Updates the manual adjustment counts (added/removed colonies).
+  Future<void> updateManualAdjustments({
+    required String id,
+    required int added,
+    required int removed,
+  }) async {
+    // Update in history
+    final index = _history.indexWhere((a) => a.id == id);
+    if (index != -1) {
+      _history[index] = _history[index].copyWith(
+        added: added,
+        removed: removed,
+      );
+      await _storageService.saveRecentAnalyses(_history);
+    }
+
+    // Update current result
+    if (_currentResult?.id == id) {
+      _currentResult = _currentResult!.copyWith(
+        added: added,
+        removed: removed,
+      );
+    }
+
+    notifyListeners();
+  }
+
+  /// Updates the metadata for a specific analysis result.
+  Future<void> updateAnalysisMetadata(String id, Map<String, String> metadata) async {
+    final index = _history.indexWhere((a) => a.id == id);
+    if (index == -1) return;
+
+    final updated = _history[index].copyWith(
+      sampleId: metadata['sample_id'],
+      sampleType: metadata['sample_type'],
+      mediaType: metadata['media_type'],
+      dilution: metadata['dilution'],
+      inoculationMethod: metadata['inoculation_method'],
+      inoculumVolume: metadata['inoculum_volume'],
+      plateReplicate: metadata['plate_replicate'],
+      samplingTime: metadata['sampling_time'],
+      samplingLocation: metadata['sampling_location'],
+      samplingOfficer: metadata['sampling_officer'],
+      incubatorEntryTime: metadata['incubator_entry_time'],
+      incubatorTemp: metadata['incubator_temp'],
+      incubationTime: metadata['incubation_time'],
+      incubationCondition: metadata['incubation_condition'],
+      incubatorId: metadata['incubator_id'],
+      diluent: metadata['diluent'],
+      mediaLot: metadata['media_lot'],
+      analystName: metadata['analyst_name'],
+      morphologyNotes: metadata['morphology_notes'],
+    );
+
+    _history[index] = updated;
+    await _storageService.saveRecentAnalyses(_history);
+
+    if (_currentResult?.id == id) {
+      _currentResult = updated;
+    }
+
+    notifyListeners();
+  }
+
   // --------------------------------------------------------------------------
   // Filtering
   // --------------------------------------------------------------------------

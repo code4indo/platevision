@@ -769,16 +769,140 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
   }
 
   Widget _buildSampleMetadata(AnalysisResult result) {
-    final hasMetadata = result.mediaType.isNotEmpty || result.sampleType.isNotEmpty; if (!hasMetadata) return const SizedBox.shrink();
     return Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(AppSpacing.radiusSm), border: Border.all(color: AppColors.borderSubtle)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Icon(Icons.assignment_outlined, size: 14, color: AppColors.info), const SizedBox(width: 6), Text('SAMPLE METADATA', style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 1.5))]), const SizedBox(height: 10),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.assignment_outlined, size: 14, color: AppColors.info), 
+          const SizedBox(width: 6), 
+          Text('SAMPLE METADATA', style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 1.5)),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => _showEditMetadataDialog(context, result),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.accentPrimary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: AppColors.accentPrimary.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.edit_rounded, size: 12, color: AppColors.accentPrimary),
+                  const SizedBox(width: 4),
+                  Text('EDIT', style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.accentPrimary)),
+                ],
+              ),
+            ),
+          ),
+        ]), 
+        const SizedBox(height: 10),
+        if (result.sampleId.isNotEmpty) _buildDetailRow('Sample ID', result.sampleId), if (result.sampleId.isNotEmpty) const SizedBox(height: 5),
         if (result.sampleType.isNotEmpty) _buildDetailRow('Sample Type', result.sampleType), if (result.sampleType.isNotEmpty) const SizedBox(height: 5),
         if (result.mediaType.isNotEmpty) _buildDetailRow('Media', result.mediaType), if (result.mediaType.isNotEmpty) const SizedBox(height: 5),
         if (result.dilution.isNotEmpty) _buildDetailRow('Dilution', result.dilution), if (result.dilution.isNotEmpty) const SizedBox(height: 5),
         if (result.inoculationMethod.isNotEmpty) _buildDetailRow('Inoculation', result.inoculationMethod), if (result.inoculationMethod.isNotEmpty) const SizedBox(height: 5),
         if (result.inoculumVolume.isNotEmpty) _buildDetailRow('Volume', result.inoculumVolume), if (result.inoculumVolume.isNotEmpty) const SizedBox(height: 5),
         if (result.incubatorTemp.isNotEmpty) _buildDetailRow('Temp', result.incubatorTemp), if (result.incubatorTemp.isNotEmpty) const SizedBox(height: 5),
-        if (result.analystName.isNotEmpty) _buildDetailRow('Analyst', result.analystName)]));
+        if (result.analystName.isNotEmpty) _buildDetailRow('Analyst', result.analystName),
+        if (result.sampleId.isEmpty && result.sampleType.isEmpty && result.mediaType.isEmpty && result.dilution.isEmpty && result.inoculationMethod.isEmpty && result.inoculumVolume.isEmpty && result.incubatorTemp.isEmpty && result.analystName.isEmpty)
+          Text('No metadata available', style: GoogleFonts.inter(fontSize: 10, color: AppColors.textMuted)),
+      ]));
+  }
+
+  void _showEditMetadataDialog(BuildContext context, AnalysisResult result) {
+    final sampleIdController = TextEditingController(text: result.sampleId);
+    final sampleTypeController = TextEditingController(text: result.sampleType);
+    final mediaTypeController = TextEditingController(text: result.mediaType);
+    final dilutionController = TextEditingController(text: result.dilution);
+    final inoculationController = TextEditingController(text: result.inoculationMethod);
+    final volumeController = TextEditingController(text: result.inoculumVolume);
+    final tempController = TextEditingController(text: result.incubatorTemp);
+    final analystController = TextEditingController(text: result.analystName);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        title: Text('Edit Metadata', style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 16)),
+        content: SizedBox(
+          width: 400,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildEditField('Sample ID', sampleIdController),
+                _buildEditField('Sample Type', sampleTypeController),
+                _buildEditField('Media Type', mediaTypeController),
+                _buildEditField('Dilution', dilutionController),
+                _buildEditField('Inoculation Method', inoculationController),
+                _buildEditField('Volume', volumeController),
+                _buildEditField('Incubator Temp', tempController),
+                _buildEditField('Analyst Name', analystController),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('BATAL', style: GoogleFonts.jetBrainsMono(color: AppColors.textTertiary, fontSize: 12, fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final ap = context.read<AnalysisProvider>();
+              ap.updateAnalysisMetadata(result.id, {
+                'sample_id': sampleIdController.text,
+                'sample_type': sampleTypeController.text,
+                'media_type': mediaTypeController.text,
+                'dilution': dilutionController.text,
+                'inoculation_method': inoculationController.text,
+                'inoculum_volume': volumeController.text,
+                'incubator_temp': tempController.text,
+                'analyst_name': analystController.text,
+              });
+              Navigator.of(ctx).pop();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.accentPrimary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: Text('SIMPAN', style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w700, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditField(String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12),
+          filled: true,
+          fillColor: AppColors.bgInput,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: BorderSide(color: AppColors.borderSubtle),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: BorderSide(color: AppColors.borderSubtle),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: BorderSide(color: AppColors.accentPrimary),
+          ),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        ),
+      ),
+    );
   }
 
   Widget _buildDetailRow(String label, String value) => Row(children: [Text(label, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textMuted)), const Spacer(), Flexible(child: Text(value, style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textSecondary), textAlign: TextAlign.right, overflow: TextOverflow.ellipsis))]);

@@ -1,0 +1,1000 @@
+import 'package:flutter/material.dart';
+import 'dart:html' as html;
+import 'package:platevision_ai/config/app_config.dart';
+import 'package:platevision_ai/theme/app_colors.dart';
+import 'package:platevision_ai/theme/app_spacing.dart';
+import 'package:platevision_ai/theme/app_theme.dart';
+import 'package:platevision_ai/theme/app_typography.dart';
+import 'package:platevision_ai/theme/app_responsive.dart';
+import 'package:platevision_ai/widgets/common/lab_button.dart';
+import 'package:platevision_ai/widgets/common/lab_panel.dart';
+import 'package:platevision_ai/widgets/common/lab_readout.dart';
+import 'package:platevision_ai/widgets/common/lab_status_bar.dart';
+import 'package:platevision_ai/widgets/charts/detection_chart.dart';
+import 'package:platevision_ai/widgets/lab_indicators/class_legend.dart';
+import 'package:platevision_ai/widgets/lab_indicators/colony_counter_display.dart';
+import 'package:platevision_ai/providers/analysis_provider.dart';
+import 'package:platevision_ai/providers/auth_provider.dart';
+import 'package:platevision_ai/providers/dashboard_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:platevision_ai/screens/capture/capture_screen.dart';
+
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  int _currentIndex = 1;
+  final _refreshKey = GlobalKey<RefreshIndicatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshData();
+    });
+  }
+
+  Future<void> _refreshData() async {
+    final dashboardProvider = context.read<DashboardProvider>();
+    final analysisProvider = context.read<AnalysisProvider>();
+    dashboardProvider.updateAnalysisHistory(analysisProvider.history);
+    await dashboardProvider.refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final analysisProvider = context.watch<AnalysisProvider>();
+
+    return Scaffold(
+      body: Container(
+        color: AppColors.bgScaffold,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Status bar
+              LabStatusBar(
+                connectionStatus: dashboardProvider.isSystemOperational
+                    ? ConnectionStatus.online
+                    : ConnectionStatus.offline,
+              ),
+
+              // Main content
+              Expanded(
+                child: RefreshIndicator(
+                  key: _refreshKey,
+                  color: AppColors.accentPrimary,
+                  backgroundColor: AppColors.bgCard,
+                  onRefresh: _refreshData,
+                  child: _buildCurrentPage(dashboardProvider, analysisProvider, authProvider),
+                ),
+              ),
+
+              // Bottom navigation
+              _buildBottomNav(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentPage(
+    DashboardProvider dashboardProvider,
+    AnalysisProvider analysisProvider,
+    AuthProvider authProvider,
+  ) {
+    switch (_currentIndex) {
+      case 0:
+        return _buildDashboardPage(dashboardProvider, analysisProvider, authProvider);
+      case 1:
+        return const CaptureScreen(embedInTab: true);
+      case 2:
+        return _buildPlaceholderPage('Samples', Icons.science_rounded, '/samples');
+      case 3:
+        return _buildPlaceholderPage('Reports', Icons.assessment_rounded, '/reports');
+      case 4:
+        return _buildPlaceholderPage('Settings', Icons.settings_rounded, '/settings');
+      default:
+        return _buildDashboardPage(dashboardProvider, analysisProvider, authProvider);
+    }
+  }
+
+  // ============================================================
+  // Dashboard Page
+  // ============================================================
+
+  Widget _buildDashboardPage(
+    DashboardProvider dashboardProvider,
+    AnalysisProvider analysisProvider,
+    AuthProvider authProvider,
+  ) {
+    final padding = Responsive.horizontalPadding(context);
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(
+        horizontal: padding,
+        vertical: AppSpacing.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Welcome header
+          _buildWelcomeHeader(authProvider),
+          const SizedBox(height: AppSpacing.md),
+
+          // QC Alert Banner
+          if (dashboardProvider.hasQcAlerts) ...[
+            _buildQcAlertBanner(dashboardProvider),
+            const SizedBox(height: AppSpacing.md),
+          ],
+
+          // Readout cards row
+          _buildReadoutCards(dashboardProvider),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Colony counter display
+          _buildColonyCounterSection(dashboardProvider),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Detection chart + Confidence distribution
+          Responsive.rowOrColumn(
+            context: context,
+            gap: AppSpacing.md,
+            children: [
+              Expanded(
+                flex: 3,
+                child: _buildDetectionChartSection(dashboardProvider),
+              ),
+              Expanded(
+                flex: 2,
+                child: _buildConfidenceSection(dashboardProvider),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Quick actions + Processing time
+          Responsive.rowOrColumn(
+            context: context,
+            gap: AppSpacing.md,
+            children: [
+              Expanded(
+                flex: 2,
+                child: _buildQuickActions(),
+              ),
+              Expanded(
+                flex: 3,
+                child: _buildProcessingTimeSection(dashboardProvider),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // System status + Recent activity
+          Responsive.rowOrColumn(
+            context: context,
+            gap: AppSpacing.md,
+            children: [
+              Expanded(
+                flex: 2,
+                child: _buildSystemStatus(dashboardProvider),
+              ),
+              Expanded(
+                flex: 3,
+                child: _buildRecentActivity(dashboardProvider),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWelcomeHeader(AuthProvider authProvider) {
+    final user = authProvider.currentUser;
+    return Row(
+      children: [
+        // User avatar
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.bgCardAlt,
+            border: Border.all(
+              color: AppColors.borderSubtle,
+              width: 1.5,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              user?.initials ?? '?',
+              style: AppTypography.dataSmall.copyWith(
+                color: AppColors.accentPrimary,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome, ${user?.fullName ?? "User"}',
+                style: AppTypography.pageTitle,
+              ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  AppTheme.statusDot(AppColors.statusOnline, size: 6),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    '${user?.roleLabel ?? "Viewer"} • ${user?.laboratory ?? "Lab"}',
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // Notification bell
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: AppColors.textTertiary,
+            size: 22,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // QC Alert Banner
+  // ============================================================
+
+  Widget _buildQcAlertBanner(DashboardProvider dashboardProvider) {
+    final alerts = dashboardProvider.qcAlerts;
+    if (alerts.isEmpty) return const SizedBox.shrink();
+
+    final activeAlerts = alerts.where((a) => a.type != QcAlertType.info).toList();
+    final infoAlerts = alerts.where((a) => a.type == QcAlertType.info).toList();
+
+    return LabPanel(
+      title: activeAlerts.isNotEmpty ? 'Quality Control Alerts' : 'Information',
+      icon: activeAlerts.isNotEmpty ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
+      child: Column(
+        children: [
+          ...activeAlerts.map((a) => _buildAlertRow(a)),
+          if (activeAlerts.isNotEmpty && infoAlerts.isNotEmpty)
+            const Divider(height: 1, color: AppColors.borderSubtle),
+          ...infoAlerts.map((a) => _buildAlertRow(a)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAlertRow(QcAlert alert) {
+    final iconColor = switch (alert.type) {
+      QcAlertType.error => AppColors.statusOffline,
+      QcAlertType.warning => AppColors.statusWarning,
+      QcAlertType.info => AppColors.info,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            alert.type == QcAlertType.error
+                ? Icons.error_outline
+                : alert.type == QcAlertType.warning
+                    ? Icons.warning_amber_rounded
+                    : Icons.info_outline,
+            size: 18,
+            color: iconColor,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(alert.title,
+                  style: AppTypography.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: iconColor,
+                  ),
+                ),
+                Text(alert.message,
+                  style: AppTypography.caption,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // Confidence Distribution Section
+  // ============================================================
+
+  Widget _buildConfidenceSection(DashboardProvider dashboardProvider) {
+    final confDist = dashboardProvider.confidenceDistribution;
+    final total = confDist.values.fold<int>(0, (s, v) => s + v);
+
+    return LabPanel(
+      title: 'Confidence',
+      icon: Icons.speed_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (total == 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+              child: Center(
+                child: Text('No data yet', style: AppTypography.caption),
+              ),
+            )
+          else ...[
+            _buildConfidenceBar('HIGH (≥80%)', confDist['high'] ?? 0, total, AppColors.statusOnline),
+            const SizedBox(height: AppSpacing.sm),
+            _buildConfidenceBar('MEDIUM (50-79%)', confDist['medium'] ?? 0, total, AppColors.statusWarning),
+            const SizedBox(height: AppSpacing.sm),
+            _buildConfidenceBar('LOW (<50%)', confDist['low'] ?? 0, total, AppColors.statusOffline),
+            const SizedBox(height: AppSpacing.sm),
+            Center(
+              child: Text('${dashboardProvider.formattedAverageConfidence} average',
+                style: AppTypography.dataLabel.copyWith(color: AppColors.accentPrimary),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfidenceBar(String label, int count, int total, Color color) {
+    final pct = total > 0 ? count / total : 0.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: AppTypography.caption),
+            Text('${count} (${(pct * 100).toStringAsFixed(0)}%)',
+              style: AppTypography.dataLabel.copyWith(color: color),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Container(
+          height: 6,
+          decoration: BoxDecoration(
+            color: AppColors.bgInput,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: pct,
+            child: Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProcessingTimeSection(DashboardProvider dashboardProvider) {
+    return LabPanel(
+      title: 'Performance',
+      icon: Icons.timer_outlined,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _buildPerfStat('AVERAGE', dashboardProvider.formattedAverageProcessingTime, Icons.timer_outlined),
+              const SizedBox(width: AppSpacing.sm),
+              _buildPerfStat('FASTEST',
+                dashboardProvider.minProcessingTimeMs > 0
+                    ? '${dashboardProvider.minProcessingTimeMs.toStringAsFixed(0)}ms'
+                    : '--',
+                Icons.timer_off_outlined),
+              const SizedBox(width: AppSpacing.sm),
+              _buildPerfStat('SLOWEST',
+                dashboardProvider.maxProcessingTimeMs > 0
+                    ? '${dashboardProvider.maxProcessingTimeMs.toStringAsFixed(0)}ms'
+                    : '--',
+                Icons.timer_rounded),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: LabButton(
+              label: 'EXPORT CSV',
+              variant: LabButtonVariant.secondary,
+              size: LabButtonSize.sm,
+              icon: Icons.file_download_outlined,
+              onPressed: () => _exportCsv(dashboardProvider),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPerfStat(String label, String value, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: AppColors.bgCardAlt,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          border: Border.all(color: AppColors.borderSubtle, width: 1),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 18, color: AppColors.textSecondary),
+            const SizedBox(height: 4),
+            Text(value, style: AppTypography.dataSmall),
+            const SizedBox(height: 2),
+            Text(label, style: AppTypography.caption),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _exportCsv(DashboardProvider dashboardProvider) {
+    final buf = StringBuffer();
+    buf.writeln('PlateVisionAI - Analysis Report');
+    buf.writeln('Exported: ${DateTime.now().toIso8601String()}');
+    buf.writeln('Total Analyses: ${dashboardProvider.totalAnalysisCount}');
+    buf.writeln('Total Colonies: ${dashboardProvider.totalColonyCount}');
+    buf.writeln('Average Confidence: ${dashboardProvider.formattedAverageConfidence}');
+    buf.writeln('');
+    buf.writeln('ID,Timestamp,Colonies,Total Objects,Processing Time (ms),Avg Confidence');
+    final analyses = context.read<AnalysisProvider>().history;
+    for (final a in analyses) {
+      buf.writeln('${a.id},${a.timestamp.toIso8601String()},${a.colonyCount},${a.totalDetections},${a.processingTime.inMilliseconds},${(a.averageConfidence * 100).toStringAsFixed(1)}%');
+    }
+    final blob = html.Blob([buf.toString()], 'text/csv');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+      ..setAttribute('download', 'platevision_report_${DateTime.now().millisecondsSinceEpoch}.csv')
+      ..click();
+    html.Url.revokeObjectUrl(url);
+  }
+
+  Widget _buildReadoutCards(DashboardProvider dashboardProvider) {
+    final todayStats = dashboardProvider.todayColonyStats;
+    final avgConf = dashboardProvider.averageConfidence;
+    final systemOk = dashboardProvider.isSystemOperational;
+    final backendTotal = dashboardProvider.backendTotalAnalyses;
+    final localTotal = dashboardProvider.totalAnalysisCount;
+    final showBackend = backendTotal > 0;
+
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: AppSpacing.md,
+      crossAxisSpacing: AppSpacing.md,
+      childAspectRatio: 2.2,
+      children: [
+        LabReadout(
+          label: showBackend ? 'Total Analyzed (Server)' : 'Total Analyzed',
+          value: showBackend ? backendTotal.toString() : localTotal.toString(),
+          icon: Icons.analytics_outlined,
+        ),
+        LabReadout(
+          label: 'Colony Count',
+          value: dashboardProvider.totalColonyCount.toString(),
+          unit: 'CFU',
+          valueColor: todayStats.totalCount > AppConfig.colonyCountHigh
+              ? AppColors.statusWarning
+              : null,
+          icon: Icons.biotech_outlined,
+        ),
+        LabReadout(
+          label: 'Avg Confidence',
+          value: '${(avgConf * 100).toStringAsFixed(1)}',
+          unit: '%',
+          valueColor: avgConf >= 0.80
+              ? AppColors.statusOnline
+              : avgConf >= 0.50
+                  ? AppColors.statusWarning
+                  : AppColors.statusOffline,
+          icon: Icons.speed_outlined,
+        ),
+        LabReadout(
+          label: 'System',
+          value: systemOk ? 'ONLINE' : 'OFFLINE',
+          valueColor: systemOk ? AppColors.statusOnline : AppColors.statusOffline,
+          icon: Icons.dns_outlined,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildColonyCounterSection(DashboardProvider dashboardProvider) {
+    final todayStats = dashboardProvider.todayColonyStats;
+
+    return LabPanel(
+      title: "Today's Colony Count",
+      icon: Icons.biotech_outlined,
+      child: Column(
+        children: [
+          ColonyCounterDisplay(
+            count: todayStats.totalCount,
+            label: 'COLONY COUNT',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildMiniStat('SAMPLES', todayStats.sampleSize.toString()),
+              Container(
+                width: 1,
+                height: 28,
+                color: AppColors.borderSubtle,
+              ),
+              _buildMiniStat('AVERAGE', todayStats.averageCount.toStringAsFixed(1)),
+              Container(
+                width: 1,
+                height: 28,
+                color: AppColors.borderSubtle,
+              ),
+              _buildMiniStat('MAX', todayStats.maxCount.toString()),
+              Container(
+                width: 1,
+                height: 28,
+                color: AppColors.borderSubtle,
+              ),
+              _buildMiniStat('TREND', todayStats.trendPercentage),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniStat(String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(value, style: AppTypography.dataSmall.copyWith(
+          color: AppColors.accentPrimary,
+        )),
+        const SizedBox(height: 2),
+        Text(label, style: AppTypography.caption),
+      ],
+    );
+  }
+
+  Widget _buildDetectionChartSection(DashboardProvider dashboardProvider) {
+    return LabPanel(
+      title: 'Class Distribution',
+      icon: Icons.bar_chart_outlined,
+      child: Column(
+        children: [
+          SizedBox(
+            height: 220,
+            child: DetectionChart(
+              classCounts: dashboardProvider.classDistribution,
+              animated: true,
+              height: 200,
+              onBarTap: (className) {},
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ClassLegend(
+            classCounts: dashboardProvider.classDistribution,
+            layout: ClassLegendLayout.horizontal,
+            selectedClass: null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return LabPanel(
+      title: 'Quick Actions',
+      icon: Icons.flash_on_outlined,
+      child: Column(
+        children: [
+          _buildQuickActionItem(
+            icon: Icons.add_circle_outline_rounded,
+            label: 'New Analysis',
+            subtitle: 'Capture or upload image',
+            onTap: () => Navigator.of(context).pushNamed('/capture'),
+            color: AppColors.accentPrimary,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _buildQuickActionItem(
+            icon: Icons.assessment_outlined,
+            label: 'View Reports',
+            subtitle: 'Export & statistics',
+            onTap: () => Navigator.of(context).pushNamed('/reports'),
+            color: AppColors.accentSecondary,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _buildQuickActionItem(
+            icon: Icons.science_outlined,
+            label: 'Sample Manager',
+            subtitle: 'Manage samples & batches',
+            onTap: () => Navigator.of(context).pushNamed('/samples'),
+            color: AppColors.info,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionItem({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.bgCardAlt,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(color: AppColors.borderSubtle, width: 1),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label.toUpperCase(), style: AppTypography.cardTitle.copyWith(color: color)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: AppTypography.caption),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textTertiary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSystemStatus(DashboardProvider dashboardProvider) {
+    final status = dashboardProvider.systemStatus;
+
+    return LabPanel(
+      title: 'System Status',
+      icon: Icons.dns_outlined,
+      child: Column(
+        children: [
+          _buildStatusRow(
+            'API Health',
+            status.apiOnline ? 'Online' : 'Offline',
+            status.apiOnline ? AppColors.statusOnline : AppColors.statusOffline,
+            showDot: true,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _buildStatusRow('Model', status.modelVersion, AppColors.textSecondary),
+          const SizedBox(height: AppSpacing.sm),
+          _buildStatusRow(
+            'Response',
+            status.apiResponseTime != null
+                ? '${status.apiResponseTime!.inMilliseconds}ms'
+                : '--',
+            status.apiResponseTime != null &&
+                    status.apiResponseTime!.inMilliseconds < 500
+                ? AppColors.statusOnline
+                : AppColors.statusWarning,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _buildStatusRow('Uptime', _calculateUptime(), AppColors.textSecondary),
+          const SizedBox(height: AppSpacing.md),
+          LabButton(
+            label: 'CHECK STATUS',
+            variant: LabButtonVariant.ghost,
+            size: LabButtonSize.sm,
+            icon: Icons.refresh_rounded,
+            isLoading: dashboardProvider.isLoadingStatus,
+            onPressed: () => dashboardProvider.checkSystemStatus(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusRow(
+    String label,
+    String value,
+    Color valueColor, {
+    bool showDot = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs + 2,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.bgInput,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      child: Row(
+        children: [
+          if (showDot)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.xs),
+              child: AppTheme.statusDot(valueColor, size: 6),
+            ),
+          Text(label, style: AppTypography.status),
+          const Spacer(),
+          Text(value, style: AppTypography.status.copyWith(color: valueColor)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentActivity(DashboardProvider dashboardProvider) {
+    final activities = dashboardProvider.recentActivity;
+
+    return LabPanel(
+      title: 'Recent Activity',
+      icon: Icons.history_outlined,
+      child: activities.isEmpty
+          ? _buildEmptyActivity()
+          : Column(
+              children: activities
+                  .take(8)
+                  .map((activity) => _buildActivityItem(activity))
+                  .toList(),
+            ),
+    );
+  }
+
+  Widget _buildEmptyActivity() {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        children: [
+          Icon(Icons.inbox_outlined, size: 32, color: AppColors.textMuted),
+          const SizedBox(height: AppSpacing.sm),
+          Text('NO RECENT ACTIVITY', style: AppTypography.status),
+          const SizedBox(height: AppSpacing.xs),
+          Text('Run your first analysis to see activity here', style: AppTypography.caption),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityItem(ActivityItem activity) {
+    final iconData = _getActivityIcon(activity.type);
+    final iconColor = _getActivityColor(activity.type);
+
+    return InkWell(
+      onTap: () {},
+      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
+              ),
+              child: Icon(iconData, size: 16, color: iconColor),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(activity.title,
+                    style: AppTypography.bodySmall.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(activity.description,
+                    style: AppTypography.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Text(activity.timeAgo, style: AppTypography.status),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getActivityIcon(String type) {
+    switch (type) {
+      case 'analysis':
+        return Icons.analytics_rounded;
+      case 'review':
+        return Icons.rate_review_rounded;
+      case 'approval':
+        return Icons.check_circle_outline_rounded;
+      case 'system':
+        return Icons.dns_rounded;
+      case 'login':
+        return Icons.login_rounded;
+      default:
+        return Icons.info_outline_rounded;
+    }
+  }
+
+  Color _getActivityColor(String type) {
+    switch (type) {
+      case 'analysis':
+        return AppColors.accentPrimary;
+      case 'review':
+        return AppColors.info;
+      case 'approval':
+        return AppColors.success;
+      case 'system':
+        return AppColors.warning;
+      case 'login':
+        return AppColors.accentSecondary;
+      default:
+        return AppColors.textTertiary;
+    }
+  }
+
+  String _calculateUptime() {
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final uptime = now.difference(startOfDay);
+    final hours = uptime.inHours.toString().padLeft(2, '0');
+    final minutes = (uptime.inMinutes % 60).toString().padLeft(2, '0');
+    return '$hours:${minutes}h';
+  }
+
+  // ============================================================
+  // Placeholder Pages for Bottom Nav
+  // ============================================================
+
+  Widget _buildPlaceholderPage(String title, IconData icon, String route) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height - 200,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 48, color: AppColors.textMuted),
+              const SizedBox(height: AppSpacing.md),
+              Text(title.toUpperCase(), style: AppTypography.cardTitle),
+              const SizedBox(height: AppSpacing.sm),
+              LabButton(
+                label: 'OPEN $title',
+                variant: LabButtonVariant.secondary,
+                size: LabButtonSize.md,
+                icon: Icons.open_in_new_rounded,
+                onPressed: () => Navigator.of(context).pushNamed(route),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // Bottom Navigation
+  // ============================================================
+
+  Widget _buildBottomNav() {
+    final isMobile = Responsive.isMobile(context);
+    final height = isMobile ? 56.0 : AppSpacing.bottomNavHeight + 4;
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.borderSubtle,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          _buildNavItem(0, Icons.dashboard_rounded, 'Dashboard'),
+          _buildNavItem(1, Icons.camera_alt_rounded, 'Analyze'),
+          _buildNavItem(2, Icons.science_rounded, 'Samples'),
+          _buildNavItem(3, Icons.assessment_rounded, 'Reports'),
+          _buildNavItem(4, Icons.settings_rounded, ''),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    final isSelected = _currentIndex == index;
+    final color = isSelected ? AppColors.accentPrimary : AppColors.textTertiary;
+    final showLabel = label.isNotEmpty && Responsive.showNavLabels(context);
+
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          // Dashboard (0) and Analyze (1) are embedded tabs
+          if (index <= 1) {
+            setState(() => _currentIndex = index);
+          } else {
+            final routes = ['/dashboard', '/capture', '/samples', '/reports', '/settings'];
+            Navigator.of(context).pushNamed(routes[index]);
+          }
+        },
+        child: Container(
+          color: Colors.transparent,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Indicator bar
+              Container(
+                width: isSelected ? 24 : 0,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.accentPrimary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Icon(icon, size: 20, color: color),
+              if (showLabel) ...[
+                const SizedBox(height: 2),
+                Text(label,
+                  style: AppTypography.caption.copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: color,
+                    fontSize: Responsive.isMobile(context) ? 9 : 10,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

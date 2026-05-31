@@ -1301,8 +1301,8 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
   Widget _buildDetailRow(String label, String value) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [SizedBox(width: 140, child: Text(label, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textMuted))), Expanded(child: Text(value, style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textSecondary), textAlign: TextAlign.left, overflow: TextOverflow.ellipsis))]);
 
   List<DetectionResult> _getFilteredDetections(AnalysisResult result) { if (_classFilter == 'all') return result.detections; return result.detections.where((d) => d.className == _classFilter).toList(); }
-  String _getSeverity(int c) { if (c > 300) return 'TNTC'; if (c > 150) return 'TFTC'; if (c > 30) return 'IDEAL'; return 'LOW'; }
-  Color _getSeverityColor(int c) { if (c > 300) return AppColors.error; if (c > 150) return AppColors.warning; if (c > 30) return AppColors.success; return AppColors.info; }
+  String _getSeverity(int c) { if (c > 300) return 'TNTC'; if (c >= 30) return 'IDEAL'; if (c > 0) return 'TFTC'; return 'NONE'; }
+  Color _getSeverityColor(int c) { if (c > 300) return AppColors.error; if (c >= 30) return AppColors.success; if (c > 0) return AppColors.warning; return AppColors.info; }
   String _getValidityStatus(int c) { if (c < 30) return 'Too Few (<30)'; if (c > 300) return 'TNTC (>300)'; return 'Valid (30-300)'; }
   String _formatTimestamp(DateTime dt) => '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
 }

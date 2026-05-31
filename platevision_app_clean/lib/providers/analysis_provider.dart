@@ -271,6 +271,9 @@ class AnalysisProvider extends ChangeNotifier {
         mediaLot: metadata?['media_lot'] ?? '',
         analystName: metadata?['analyst_name'] ?? '',
         morphologyNotes: metadata?['morphology_notes'] ?? '',
+        ambientTemperature: metadata?['ambient_temperature'] ?? '',
+        ambientHumidity: metadata?['ambient_humidity'] ?? '',
+        laboratory: metadata?['laboratory'] ?? '',
       );
 
       _currentResult = result;
@@ -304,6 +307,7 @@ class AnalysisProvider extends ChangeNotifier {
       }
 
       await _apiService.saveAnalysis({
+        // ── Image & Detection Data ──
         'sample_id': result.sampleId,
         'image_filename': result.imagePath.split('/').last,
         'image_width': result.imageWidth,
@@ -316,6 +320,33 @@ class AnalysisProvider extends ChangeNotifier {
         'avg_confidence': result.averageConfidence,
         'class_breakdown': classBreakdown,
         'detections': result.detections.map((d) => d.toJson()).toList(),
+        // ── Sample Metadata ──
+        'sample_type': result.sampleType,
+        'plate_replicate': result.plateReplicate,
+        'sampling_time': result.samplingTime,
+        'sampling_location': result.samplingLocation,
+        'sampling_officer': result.samplingOfficer,
+        // ── Method & Dilution ──
+        'media_type': result.mediaType,
+        'inoculation_method': result.inoculationMethod,
+        'dilution': result.dilution,
+        'inoculum_volume': result.inoculumVolume,
+        'diluent': result.diluent,
+        // ── Incubation ──
+        'incubator_entry_time': result.incubatorEntryTime,
+        'incubator_temp': result.incubatorTemp,
+        'incubation_time': result.incubationTime,
+        'incubation_condition': result.incubationCondition,
+        'incubator_id': result.incubatorId,
+        // ── Additional ──
+        'media_lot': result.mediaLot,
+        'analyst_name': result.analystName,
+        'morphology_notes': result.morphologyNotes,
+        'operator_name': result.analystName,
+        // ── ISO 17025 Environmental Conditions ──
+        'ambient_temperature': result.ambientTemperature,
+        'ambient_humidity': result.ambientHumidity,
+        'laboratory': result.laboratory,
       });
     } catch (_) {
       // Non-critical — data still saved locally

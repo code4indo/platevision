@@ -546,6 +546,10 @@ const kInoculationMethodOptions = ['Spread Plate', 'Pour Plate', 'Drop Plate', '
 const kDiluentOptions = ['Peptone Water', 'Buffered Peptone Water (BPW)', 'Physiological NaCl (0.85%)', 'Ringer Solution', 'Phosphate Buffer', 'Other'];
 const kIncubationConditionOptions = ['Aerobic', 'Anaerobic', 'Microaerophilic', 'Capnophilic'];
 
+// ISO 17025 §5.3 Environmental Conditions
+const kAmbientTempOptions = ['15°C', '16°C', '17°C', '18°C', '19°C', '20°C', '21°C', '22°C', '23°C', '24°C', '25°C', '26°C', '27°C', '28°C', '29°C', '30°C', '31°C', '32°C', '33°C', '34°C', '35°C'];
+const kAmbientHumidityOptions = ['20%', '25%', '30%', '35%', '40%', '45%', '50%', '55%', '60%', '65%', '70%', '75%', '80%', '85%', '90%'];
+
 class CaptureScreen extends StatefulWidget {
   /// When true, the header with back button is hidden (embedded mode inside a tab).
   final bool embedInTab;
@@ -588,8 +592,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
   String? _selectedIncubationTime;
   String? _selectedIncubationCondition;
   // Category 4: Additional Information (no dropdowns - results are auto)
-
-
+  // Category 5: ISO 17025 Environmental Conditions
+  String? _selectedAmbientTemp;
+  String? _selectedAmbientHumidity;
+  final _laboratoryNameController = TextEditingController();
 
   Uint8List? _pickedImageBytes;
   String? _pickedImageName;
@@ -601,6 +607,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   bool _metadataGroup2Expanded = false;
   bool _metadataGroup3Expanded = false;
   bool _metadataGroup4Expanded = false;
+  bool _metadataGroup5Expanded = false; // ISO 17025 Environmental Conditions
 
   // ── Zoom state ──
   final TransformationController _zoomController = TransformationController();
@@ -665,6 +672,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     _mediaLotController.dispose();
     _morphologyNotesController.dispose();
     _analystNameController.dispose();
+    _laboratoryNameController.dispose();
     _zoomController.dispose();
     super.dispose();
   }
@@ -778,6 +786,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
       'media_lot': _mediaLotController.text,
       'analyst_name': _analystNameController.text,
       'morphology_notes': _morphologyNotesController.text,
+      // ISO 17025 §5.3 Environmental Conditions
+      'ambient_temperature': _selectedAmbientTemp ?? '',
+      'ambient_humidity': _selectedAmbientHumidity ?? '',
+      'laboratory': _laboratoryNameController.text,
     };
   }
 
@@ -1516,6 +1528,38 @@ class _CaptureScreenState extends State<CaptureScreen> {
               ]),
             ),
           ],
+          const SizedBox(height: 8),
+
+          // ── GROUP 5: ISO 17025 Environmental Conditions ──
+          _buildMetadataCategoryHeader('ISO 17025 ENVIRONMENT (§5.3)', Icons.thermostat_rounded, Colors.teal, _metadataGroup5Expanded, () => setState(() => _metadataGroup5Expanded = !_metadataGroup5Expanded)),
+          if (_metadataGroup5Expanded) ...[
+            const SizedBox(height: 5),
+            Row(children: [
+              Expanded(child: _buildDropdownField('Ambient Temp', _selectedAmbientTemp, kAmbientTempOptions, (v) => setState(() => _selectedAmbientTemp = v), Icons.thermostat_rounded)),
+              const SizedBox(width: 6),
+              Expanded(child: _buildDropdownField('Ambient Humidity', _selectedAmbientHumidity, kAmbientHumidityOptions, (v) => setState(() => _selectedAmbientHumidity = v), Icons.water_drop_outlined)),
+            ]),
+            const SizedBox(height: 5),
+            Row(children: [
+              Expanded(child: _buildFreeTextField('Laboratory Name', 'Lab name...', _laboratoryNameController, Icons.science_outlined)),
+              const Expanded(child: SizedBox()),
+            ]),
+            const SizedBox(height: 8),
+            // ISO 17025 info notice
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.teal.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
+                border: Border.all(color: Colors.teal.withOpacity(0.2), width: 1),
+              ),
+              child: Row(children: [
+                Icon(Icons.info_outline_rounded, size: 12, color: Colors.teal.withOpacity(0.8)),
+                const SizedBox(width: 4),
+                Expanded(child: Text('ISO 17025 §5.3: Environmental conditions must be recorded when they affect result quality.', style: GoogleFonts.inter(fontSize: 9, color: Colors.teal.withOpacity(0.9)))),
+              ]),
+            ),
+          ],
         ]),
     );
   }
@@ -1536,16 +1580,16 @@ class _CaptureScreenState extends State<CaptureScreen> {
     ]);
   }
 
-  /// Get validity status based on colony count (SNI/ISO standard)
+  /// Get validity status based on colony count (ISO 7218:2007 standard)
   String _getValidityStatus(int count) {
-    if (count < 30) return 'Too Few (<30)';
+    if (count < 10) return 'TFTC (<10)';
     if (count > 300) return 'TNTC (>300)';
-    return 'Valid (30-300)';
+    return 'Valid (10-300)';
   }
 
   /// Get color for validity status
   Color _getValidityColor(int count) {
-    if (count < 30) return AppColors.info;
+    if (count < 10) return AppColors.warning;
     if (count > 300) return AppColors.error;
     return AppColors.success;
   }

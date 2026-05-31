@@ -1268,28 +1268,59 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
     final adjustedCount = result.colonyCount + result.added - result.removed;
     String comment;
     if (adjustedCount == 0) comment = 'No colonies';
-    else if (adjustedCount < 30) comment = 'TFTC';
+    else if (adjustedCount < 10) comment = 'TFTC';
     else if (adjustedCount <= 300) comment = 'OK';
     else comment = 'TNTC';
 
     return Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(AppSpacing.radiusSm), border: Border.all(color: AppColors.borderSubtle)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // ── Sample Info Section ──
         Row(children: [Icon(Icons.assignment_outlined, size: 14, color: AppColors.info), const SizedBox(width: 6), Text('REPORT METADATA', style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textTertiary, letterSpacing: 1.5))]), 
         const SizedBox(height: 10),
-        _buildDetailRow('Sample ID', result.id), const SizedBox(height: 5),
-        _buildDetailRow('Media Type', result.mediaType.isNotEmpty ? result.mediaType : 'PCA'), const SizedBox(height: 5),
-        _buildDetailRow('Dilution', result.dilution.isNotEmpty ? result.dilution : '1.0'), const SizedBox(height: 5),
-        _buildDetailRow('Volume (mL)', result.inoculumVolume.isNotEmpty ? result.inoculumVolume : '1.000000'), const SizedBox(height: 5),
+        _buildDetailRow('Sample ID', result.sampleId.isNotEmpty ? result.sampleId : '--'), const SizedBox(height: 5),
+        _buildDetailRow('Sample Type', result.sampleType.isNotEmpty ? result.sampleType : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Plate Replicate', result.plateReplicate.isNotEmpty ? result.plateReplicate : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Sampling Time', result.samplingTime.isNotEmpty ? result.samplingTime : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Sampling Location', result.samplingLocation.isNotEmpty ? result.samplingLocation : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Sampling Officer', result.samplingOfficer.isNotEmpty ? result.samplingOfficer : '-'), const SizedBox(height: 5),
+        const Divider(height: 16, color: AppColors.borderSubtle),
+        // ── Method & Dilution Section ──
+        _buildDetailRow('Media Type', result.mediaType.isNotEmpty ? result.mediaType : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Inoculation Method', result.inoculationMethod.isNotEmpty ? result.inoculationMethod : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Dilution', result.dilution.isNotEmpty ? result.dilution : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Volume (mL)', result.inoculumVolume.isNotEmpty ? result.inoculumVolume : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Diluent', result.diluent.isNotEmpty ? result.diluent : '-'), const SizedBox(height: 5),
+        const Divider(height: 16, color: AppColors.borderSubtle),
+        // ── Incubation Section ──
+        _buildDetailRow('Incubator ID', result.incubatorId.isNotEmpty ? result.incubatorId : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Incubator Entry Time', result.incubatorEntryTime.isNotEmpty ? result.incubatorEntryTime : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Incubation Temp', result.incubatorTemp.isNotEmpty ? result.incubatorTemp : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Incubation Time', result.incubationTime.isNotEmpty ? result.incubationTime : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Incubation Condition', result.incubationCondition.isNotEmpty ? result.incubationCondition : '-'), const SizedBox(height: 5),
+        const Divider(height: 16, color: AppColors.borderSubtle),
+        // ── Additional Section ──
+        _buildDetailRow('Media Lot', result.mediaLot.isNotEmpty ? result.mediaLot : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Analyst Name', result.analystName.isNotEmpty ? result.analystName : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Morphology Notes', result.morphologyNotes.isNotEmpty ? result.morphologyNotes : '-'), const SizedBox(height: 5),
+        const Divider(height: 16, color: AppColors.borderSubtle),
+        // ── ISO 17025 Environmental Conditions ──
+        _buildDetailRow('Ambient Temp (§5.3)', result.ambientTemperature.isNotEmpty ? result.ambientTemperature : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Ambient Humidity (§5.3)', result.ambientHumidity.isNotEmpty ? result.ambientHumidity : '-'), const SizedBox(height: 5),
+        _buildDetailRow('Laboratory', result.laboratory.isNotEmpty ? result.laboratory : '-'), const SizedBox(height: 5),
+        const Divider(height: 16, color: AppColors.borderSubtle),
+        // ── Counting Results Section ──
         _buildDetailRow('AI Count', '${result.colonyCount}'), const SizedBox(height: 5),
         _buildDetailRow('Added/Removed', '+${result.added}/−${result.removed}'), const SizedBox(height: 5),
         _buildDetailRow('Adjusted Count', '$adjustedCount'), const SizedBox(height: 5),
-        _buildDetailRow('CFU Prorata', adjustedCount > 0 && adjustedCount < 30 ? 'TFTC' : adjustedCount <= 300 ? 'OK' : 'TNTC'), const SizedBox(height: 5),
+        _buildDetailRow('CFU/mL', result.adjustedCfuPerMLLabel.isNotEmpty ? result.adjustedCfuPerMLLabel : '-'), const SizedBox(height: 5),
+        _buildDetailRow('CFU Prorata', adjustedCount > 0 && adjustedCount < 10 ? 'TFTC' : adjustedCount <= 300 ? 'OK' : 'TNTC'), const SizedBox(height: 5),
         _buildDetailRow('min CFU Ø (mm)', minDiam), const SizedBox(height: 5),
         _buildDetailRow('mean CFU Ø (mm)', meanDiam), const SizedBox(height: 5),
         _buildDetailRow('max CFU Ø (mm)', maxDiam), const SizedBox(height: 5),
         _buildDetailRow('Comment', comment), const SizedBox(height: 5),
         _buildDetailRow('Counted By', 'PlateVisionAI'), const SizedBox(height: 5),
         const Divider(height: 16, color: AppColors.borderSubtle),
+        // ── Review/Approval Section ──
         _buildDetailRow('Review Signed By', '-'), const SizedBox(height: 5),
         _buildDetailRow('Review Date', '-'), const SizedBox(height: 5),
         _buildDetailRow('Rejection Signed By', 'N/A'), const SizedBox(height: 5),
@@ -1301,8 +1332,8 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
   Widget _buildDetailRow(String label, String value) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [SizedBox(width: 140, child: Text(label, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textMuted))), Expanded(child: Text(value, style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textSecondary), textAlign: TextAlign.left, overflow: TextOverflow.ellipsis))]);
 
   List<DetectionResult> _getFilteredDetections(AnalysisResult result) { if (_classFilter == 'all') return result.detections; return result.detections.where((d) => d.className == _classFilter).toList(); }
-  String _getSeverity(int c) { if (c > 300) return 'TNTC'; if (c >= 30) return 'IDEAL'; if (c > 0) return 'TFTC'; return 'NONE'; }
-  Color _getSeverityColor(int c) { if (c > 300) return AppColors.error; if (c >= 30) return AppColors.success; if (c > 0) return AppColors.warning; return AppColors.info; }
-  String _getValidityStatus(int c) { if (c < 30) return 'Too Few (<30)'; if (c > 300) return 'TNTC (>300)'; return 'Valid (30-300)'; }
+  String _getSeverity(int c) { if (c > 300) return 'TNTC'; if (c >= 10) return 'IDEAL'; if (c > 0) return 'TFTC'; return 'NONE'; }
+  Color _getSeverityColor(int c) { if (c > 300) return AppColors.error; if (c >= 10) return AppColors.success; if (c > 0) return AppColors.warning; return AppColors.info; }
+  String _getValidityStatus(int c) { if (c < 10) return 'TFTC (<10)'; if (c > 300) return 'TNTC (>300)'; return 'Valid (10-300)'; }
   String _formatTimestamp(DateTime dt) => '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
 }

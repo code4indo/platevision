@@ -1535,9 +1535,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
           if (_metadataGroup5Expanded) ...[
             const SizedBox(height: 5),
             Row(children: [
-              Expanded(child: _buildDropdownField('Ambient Temp', _selectedAmbientTemp, kAmbientTempOptions, (v) => setState(() => _selectedAmbientTemp = v), Icons.thermostat_rounded)),
+              Expanded(child: _buildDropdownField('Ambient Temp', _selectedAmbientTemp, kAmbientTempOptions, Icons.thermostat_rounded, (v) => setState(() => _selectedAmbientTemp = v))),
               const SizedBox(width: 6),
-              Expanded(child: _buildDropdownField('Ambient Humidity', _selectedAmbientHumidity, kAmbientHumidityOptions, (v) => setState(() => _selectedAmbientHumidity = v), Icons.water_drop_outlined)),
+              Expanded(child: _buildDropdownField('Ambient Humidity', _selectedAmbientHumidity, kAmbientHumidityOptions, Icons.water_drop_outlined, (v) => setState(() => _selectedAmbientHumidity = v))),
             ]),
             const SizedBox(height: 5),
             Row(children: [

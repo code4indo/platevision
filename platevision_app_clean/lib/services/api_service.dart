@@ -814,10 +814,158 @@ class ApiService {
     }
   }
 
-  /// Deletes an analysis by its ID from the backend.
-  Future<void> deleteAnalysisById(String analysisId) async {
+  /// Soft-deletes an analysis by its ID (ISO 17025: records are never permanently removed).
+  Future<Map<String, dynamic>> deleteAnalysisById(
+    String analysisId, {
+    String reason = '',
+    String deletedBy = '',
+  }) async {
     try {
-      await _dio.delete('/api/analyses/$analysisId');
+      final response = await _dio.delete(
+        '/api/analyses/$analysisId',
+        queryParameters: {
+          if (reason.isNotEmpty) 'reason': reason,
+          if (deletedBy.isNotEmpty) 'deleted_by': deletedBy,
+        },
+      );
+      return response.data is Map
+          ? Map<String, dynamic>.from(response.data)
+          : {'status': 'soft_deleted'};
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // ISO 17025 — Audit Trail
+  // --------------------------------------------------------------------------
+
+  /// Fetches the immutable audit trail from the server.
+  Future<Map<String, dynamic>> fetchAuditTrail({
+    String? resourceId,
+    String? action,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    try {
+      final params = <String, dynamic>{
+        'limit': limit,
+        'offset': offset,
+      };
+      if (resourceId != null) params['resource_id'] = resourceId;
+      if (action != null) params['action'] = action;
+
+      final response = await _dio.get(
+        '/api/audit-trail',
+        queryParameters: params,
+      );
+      return response.data is Map
+          ? Map<String, dynamic>.from(response.data)
+          : {'entries': [], 'total_returned': 0};
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // ISO 17025 — Metadata Update with Change Tracking
+  // --------------------------------------------------------------------------
+
+  /// Updates analysis metadata with full change tracking.
+  Future<Map<String, dynamic>> updateAnalysisMetadata(
+    String analysisId,
+    Map<String, dynamic> metadata, {
+    String changedBy = 'unknown',
+  }) async {
+    try {
+      metadata['changed_by'] = changedBy;
+      final response = await _dio.patch(
+        '/api/analyses/$analysisId/metadata',
+        data: metadata,
+      );
+      return response.data is Map
+          ? Map<String, dynamic>.from(response.data)
+          : {'status': 'updated'};
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // ISO 17025 — Digital Signature / Approval Workflow
+  // --------------------------------------------------------------------------
+
+  /// Submits a review, approval, or rejection for an analysis.
+  Future<Map<String, dynamic>> submitApproval(
+    String analysisId, {
+    required String action,
+    required String reviewerName,
+    String? reviewerNotes,
+    String? reviewerCredentials,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/api/analyses/$analysisId/approval',
+        data: {
+          'action': action,
+          'reviewer_name': reviewerName,
+          'reviewer_notes': reviewerNotes,
+          'reviewer_credentials': reviewerCredentials,
+        },
+      );
+      return response.data is Map
+          ? Map<String, dynamic>.from(response.data)
+          : {'status': action};
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // ISO 17025 — Changelog
+  // --------------------------------------------------------------------------
+
+  /// Fetches the full change history for an analysis.
+  Future<Map<String, dynamic>> fetchChangelog(String analysisId) async {
+    try {
+      final response = await _dio.get('/api/analyses/$analysisId/changelog');
+      return response.data is Map
+          ? Map<String, dynamic>.from(response.data)
+          : {'changelog': [], 'changelog_count': 0};
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // ISO 17025 — Image Integrity Verification
+  // --------------------------------------------------------------------------
+
+  /// Verifies image integrity by comparing SHA-256 hash.
+  Future<Map<String, dynamic>> verifyImageIntegrity(
+    String imagePath, {
+    required String expectedSha256,
+  }) async {
+    try {
+      final file = File(imagePath);
+      if (!await file.exists()) {
+        throw InvalidImageException(
+          message: 'File gambar tidak ditemukan: $imagePath',
+        );
+      }
+
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(imagePath),
+      });
+
+      final response = await _dio.post(
+        '/api/verify-integrity',
+        data: formData,
+        queryParameters: {'expected_sha256': expectedSha256},
+      );
+      return response.data is Map
+          ? Map<String, dynamic>.from(response.data)
+          : {'is_intact': false};
     } on DioException catch (e) {
       throw _mapDioException(e);
     }
